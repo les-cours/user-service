@@ -1,0 +1,1105 @@
+syntax = "proto3";
+option go_package="github.com/les-cours/user-service/api/users";
+package users;
+
+message Empty {}
+
+message Role {
+    uint32 id = 1;
+    string name = 2;
+    bool predefined = 3;
+    bool persist = 4;
+    bool coBrowsing = 5;
+    bool screenShare = 6;
+    bool audioDownload = 7;
+    bool videoDownload = 8;
+    Permissions create = 9;
+    Permissions read = 10;
+    Permissions update = 11;
+    Permissions delete = 12;
+}
+
+message Permissions {
+    int32 id = 1;
+    bool writeComment =2;
+    bool live =3;
+    bool settings =4;
+    string account_id = 5;
+}
+
+message Student {
+    string id = 1;
+    string accountID = 2;
+    string username = 3;
+    string password = 4;
+    string firstname = 5;
+    string lastname = 6;
+    string email = 7;
+    Role role = 8;
+    repeated string allowedIPS = 9;
+    repeated Department departments = 10;
+    bool status = 11;
+    string avatar = 12;
+    bool notificationStatus = 13;
+    bool onlineStatus = 14;
+    string defaultAvatar = 15;
+}
+
+message Department {
+    uint32 id = 1;
+    string name = 2;
+    string accountID = 3;
+    bool isActive = 4;
+    bool isDefault = 5;
+}
+
+message UpdateStatusDepartment{
+    uint32 departmentID = 1;
+    string accountID = 2;
+    bool isActive = 3;
+}
+
+message AccountID {
+    string accountID = 1;
+}
+
+message GetStudentRequest {
+    string accountID = 1;
+    string agentID = 2;
+}
+
+message StudentAddRequest {
+    string accountID = 1;
+    string agentID = 2;
+    string username = 3;
+    string password = 4;
+    string firstname = 5;
+    string lastname = 6;
+    string email = 7;
+    uint32 roleID = 8;
+    repeated string allowedIPS = 9;
+    repeated uint32 departments = 10;
+    string avatar = 11;
+    string defaultAvatar = 12;
+}
+
+message StudentUpdateRequest {
+    string accountID = 1;
+    string agentID = 2;
+    string username = 3;
+    string firstname = 4;
+    string lastname = 5;
+    string email = 6;
+    uint32 roleID = 7;
+    repeated string allowedIPS = 8;
+    repeated uint32 departments = 9;
+}
+
+message UpdateStudentStatusRequest {
+    string accountID = 1;
+    string agentID = 2;
+    bool status = 3;
+}
+
+message UpdateStudentStatusResponse {
+    string agentID = 1;
+    bool status = 2;
+}
+
+message StudentPasswordResetRequest{
+  string account_id = 1;
+  string oldPassword = 2;
+  string newPassword = 3;
+}
+
+message StudentPasswordResetResponse{
+  bool success = 1;
+  string error = 2; 
+}
+
+message Departments {
+    repeated Department departments = 1;
+}
+
+message GetDepartmentRequest {
+    string accountID = 1;
+    uint32 departmentID = 2;
+}
+
+message DepartmentUpdateRequest {
+    string accountID = 1;
+    uint32 deparmentID = 2;
+    string departmentName = 3;
+}
+
+message StudentID {
+    string agentID = 1;
+}
+
+message DepartmentID {
+    uint32 departmentID = 1;
+}
+
+message GetStudentsByDepartmentRequest {
+    string accountID = 1;
+    uint32 departmentID = 2;
+}
+
+message DeleteStudentRequest {
+    string accountID = 1;
+    string agentID = 2;
+}
+
+message AddDepartmentRequest {
+    string accountID = 1;
+    string name = 2; 
+}
+
+message UpdateDepartmentRequest {
+    string accountID = 1;
+    uint32 departmentID = 2;
+    string name = 3;
+}
+
+message DeleteDepartmentRequest {
+    string accountID = 1;
+    uint32 departmentID = 2;
+}
+
+message GetUserByIDRequest {
+    string userID = 2;
+}
+
+message Plan {
+    string planID = 1;
+    string name = 2;
+    int64 periodEndAt = 3;
+    bool active = 4;
+    string require = 5;
+}
+
+message AccountStatus {
+   string accountID = 1;
+   string name = 2;
+   string status = 3;
+   Plan plan = 4;
+}
+
+message User {
+    string id = 1;
+    string accountID= 2;
+    string username = 3;
+    string firstName = 4;
+    string lastName = 5;
+    string email = 6;
+    Plan plan = 8;
+    repeated string allowedIPS = 9;
+    string department = 10;
+    string avatar = 11;
+    Permissions Permissions = 12;
+}
+
+message GetUserRequest {
+    string username = 1;
+    string password = 2;
+    bool isTeacher = 3;
+}
+
+message Students {
+    repeated Student agents = 1;
+}
+
+message CustomerAccount {
+    string account_id = 1;
+    string company_name =2;
+    string company_website =3;
+    string email = 4;
+    string stripe_customer_id =5;
+    string stripe_plan_id =6;
+    string default_agent_id= 7;
+    string first_name = 8;
+    string last_name = 9;
+    string user_name= 10;
+    string password = 11;
+}
+
+message Customer {
+    uint32 id = 1;
+    string account_id = 2;
+    string company_name =3;
+    string company_website =4;
+    string email = 5;
+    string stripe_customer_id =6;
+    string stripe_plan_id =7;
+}
+
+message ResetPasswordRequest {
+    string email = 1;
+}
+
+message ResetPasswordResponse {
+    string success = 1;
+    string error = 2;
+}
+
+message PasswordResetLinkHealthRequest {
+    string linkID = 1;
+}
+
+message PasswordResetLinkHealthResponse {
+    string error = 1;
+    bool dead = 2;
+}
+
+message PasswordChangeByLinkRequest {
+    string linkID = 1;
+    string password = 2;
+}
+
+message PasswordChangeByLinkResponse {
+    string error = 1;
+    string success = 2;
+}
+
+message DoesEmailExistRequest {
+    string email = 1;
+}
+message DoesEmailExistResponse {
+    bool exists = 1;
+}
+
+message DoesUserNameExistRequest {
+    string username = 2;
+}
+message DoesUserNameExistResponse {
+    bool exists = 1;
+}
+
+message SendInstallationCodeToDevRequest {
+    string token = 1;
+    string developerEmail = 2;
+    string message = 3;
+}
+
+message SendInstallationCodeToDevResponse {
+    bool sent = 1;
+}
+
+message AccessToken {
+  string token = 1;
+  int64 expiresAt = 2;
+  string tokenType = 3;
+}
+
+message RefreshToken {
+  string token = 1;
+  int64 expiresAt = 2;
+}
+
+
+message SignupToken {
+  string token = 1;
+  int64 expiresAt = 2;
+}
+
+message SignupRequest {
+    string firstname = 1;
+    string lastname = 2;
+    string email = 3;
+    string password = 4;
+    
+}
+
+message SignupResponse {
+    bool succeeded = 1;
+    AccessToken accessToken = 2;
+    RefreshToken refreshToken = 3;
+    SignupToken signupToken = 4;
+}
+
+message Invite {
+  int64 id = 1;
+  string email = 2;
+  string role = 3;
+  int64 createdAt = 4;
+  bool expired = 5;
+}
+
+message GetInvitesRequest {
+    string accountID = 1;
+    int64 limit = 2;
+    int64 skip = 3;
+}
+
+message GetInvitesResponse {
+    repeated Invite invites = 1;   
+}
+
+message CancelInviteRequest {
+    string accountID = 1;
+    repeated int64 IDs = 2;
+}
+
+message CancelInviteResponse {
+    bool succeeded = 1;
+  }
+
+message UpdateCompanyDetailsRequest {
+    string token = 1;
+    string name = 2;
+    string website = 3;
+}
+
+message UpdateCompanyDetailsResponse {
+    bool succeeded = 1;
+}
+
+message StudentSignupRequest {
+    string firstname = 1;
+    string lastname = 2;
+    string password = 3;
+    string token = 4;
+    string email = 5;
+}
+
+message StudentSignupResponse {
+    bool succeeded = 1;
+    AccessToken accessToken = 2;
+    RefreshToken refreshToken = 3;
+}
+
+message StudentInvite {
+    string email = 1;
+    string role = 2;
+}
+
+message GenerateShareableLinkRequest {
+    string token = 1;
+    string role = 2;
+}
+
+message GenerateShareableLinkResponse {
+    string link = 1;
+}
+
+message IsSignupLinkValidRequest {
+    string token = 1;
+}
+message IsSignupLinkValidResponse {
+    bool isValid = 1;
+}
+
+message UserDetails{
+ string accountID = 1;
+ string email = 2;
+}
+
+message InviteStudentsRequest {
+    string token = 1;
+    UserDetails userDetails = 2;
+    repeated StudentInvite agents = 3;   
+}
+
+message InviteStudentsResponse {
+    bool sent = 1;
+}
+
+message Visit {
+    string URL       = 1;      
+    string Title     = 2;
+    string Source    = 3;
+    string IP        = 4;
+    string OS        = 5;
+    string Location  = 6;
+    string Country   = 7;
+    string Timezone  = 8;
+    int64  Timestamp = 9;
+}
+ 
+message Remark {
+    string ID    =1;
+    string Remark = 2;
+}
+ 
+message Phone  {
+    string ID = 1;    
+    string Phone = 2;
+}
+ 
+message Email  {
+    string ID    = 1;
+    string Email = 2;
+}
+ 
+message Address  {
+    string ID      =1;
+    string Address =2;
+}
+ 
+message Visitor  {
+    string visitorID = 1;
+    string accountID = 2;
+    string recordID = 3;
+    string browserVersion = 4;
+    string language = 5;
+    string osName = 6;
+    string browser = 7;
+    string location = 8;
+    string deviceType = 9;
+    string country = 10;
+    string timezone = 11;
+    int64 timestamp = 12;
+    string username = 13;
+    string firstname = 14;
+    string lastname = 15;
+    string email = 16;
+    string priority = 17;
+    bool watched = 18;
+    bool blocked = 19;
+    map<string,string> customAttributes = 20;
+    repeated string address = 21;
+    repeated string ipAddr = 22;
+    repeated string remarks  = 23;
+    repeated string phones = 24;
+    repeated string rooms = 25;
+    repeated Note notes = 26;
+    repeated URL urls = 27;
+}
+
+message Visitors {
+    repeated Visitor visitors = 1;
+}
+ 
+message VisitorReq {
+    string VisitorID    = 1;
+    string AccountID    = 2;
+}
+
+message VisitorExistsRes {
+    bool VisitorExists = 1;
+}
+
+//Rooms and messages 
+
+
+message RoomVisitor {
+    string   location = 1;
+	string   country = 2;
+	string   timezone = 3;
+	string   address = 4;
+	repeated string phones = 5;
+	repeated string remarks = 6;
+	string   email = 7;
+	bool     blocked = 8;
+	bool     watched = 9;
+    string ip = 10;
+}
+
+
+message VisitorInfo {
+	string   id = 1;
+	string   accountID = 2;
+	string   username = 3;
+	repeated string ipAddress = 4;
+	string   OSName = 5;
+	string   browser = 6;
+	string   browserVersion = 7;
+	string   deviceType = 8;
+	string   language = 9;
+	int32      browserMajorVersion = 10;
+	float  internetBandwidth = 11;
+	bool     isStudent = 12;
+	RoomVisitor visitor = 13;
+	int64    timestamp = 14;
+    map<string,string> customAttributes = 15;
+    repeated Note notes = 16;
+    repeated URL urls = 17;
+    string priority = 18;
+    string country = 19;
+    int64 lastReadTimestamp = 20;
+}
+
+message URL  {
+	string Path = 1;   
+	int64 Timestamp = 2;
+}
+
+message Tag {
+	string id = 1;
+	string label = 2;
+	string roomID = 3;
+	string agentID = 4;
+}
+
+message Note  {
+	string id = 1; 
+	string roomID = 2; 
+	string note = 3; 
+	int64  timestamp = 4; 
+	string agentID = 5; 
+    bool edited = 6;
+}
+
+message CustomAttribute {
+	string id = 1;
+	string label = 2;
+	string roomID = 3;
+	string agentID = 4;
+}
+message Owner {
+    string   id = 1;
+	string   kind = 2;
+	string   userName = 3;
+	repeated string departmentsIDs = 4;
+
+}
+
+message RepliedMessage {
+	string id = 1;
+	string message = 2;
+	Owner  owner = 3;
+}
+
+message Comment {
+    string           id = 1;
+	string           message = 2;
+	int64            timestamp = 3;
+	Owner           owner = 4;
+	int64            editedTimestamp = 5;
+	bool             isEdited = 6;
+	bool             isDeleted = 7;
+	repeated Attachment     attachments = 8;
+	repeated MessageHistory editHistory = 9;
+}
+
+message Attachment  {
+	string name = 1;
+	string mimeType = 2;
+	string url = 3;
+}
+
+message MessageHistory  {
+	string id = 1;
+	string             message = 2;
+	int64              timestamp = 3;
+}
+
+message Message {
+	string           id = 1;
+	string           roomID = 2;
+	string           message = 3;
+	int64            timestamp = 4;
+	int64            editedTimestamp = 5;
+	bool             isFile = 6;
+	bool             isEdited = 7;
+	bool             isDeleted = 8;
+	bool             isComment = 9;
+	bool             isNotification = 10;
+	string           targetMessageID = 11;
+	repeated string         bubbles = 12;
+	Owner            owner = 13;
+	RepliedMessage  replied = 14;
+	repeated Comment       comments = 15;
+	repeated Attachment     attachments = 16;
+	repeated MessageHistory editHistory = 17;
+	string           cursor = 18;
+  string status = 19;
+  bool isForm = 20;
+  string FormID = 21;
+  string formattedTimestamp =22;
+  bool isPrivate = 23;
+}
+
+message Form {
+    string id = 1;
+    string formTitle = 2;
+    string formDescription = 3;
+    string accountID = 4;
+    string agentID = 5;
+    string roomID = 6; 
+    string CK = 7;
+    int64 timestamp = 8;
+    repeated Datafield datafields = 9;
+    bool isSubmitted = 10;
+    string submitLabel = 11;
+}
+
+message Datafield {
+    string id = 1;
+    string label = 2;
+    string name = 3;
+    string value = 4;
+    string regex = 5;
+    string format = 6;
+    bool required = 7;
+    bool withRegex= 8;
+    repeated DataOption options = 9;
+}
+
+message DataOption {
+    string label = 1;
+    string value = 2;
+}
+
+message GetFormRequest {
+    string id = 1;
+    string accountID = 2;
+}
+
+message GetFormResponse {
+    Form form = 1;
+}
+
+
+message Messages {
+    repeated Message messages = 1;
+}
+
+message GetMessagesRequest{
+    string accountID =1;
+    string roomID = 2;
+    int64 skip = 3;
+    int64 limit = 4;
+    bool deleted = 5;
+    bool isStudent = 6;
+}
+
+message GetMessagesResponse{
+    repeated Message messages = 1;
+    int64 count =2;
+}
+
+
+message RoomStudentState {
+    string id = 1;
+    string userName = 2;
+    string firstName = 3;
+    string lastName = 4;
+    bool inPrivate = 5;
+}
+
+message RoomUser {
+    string id = 1;
+    string userName = 2;
+    string firstName = 3;
+    string lastName = 4;
+    bool private = 5;
+    string kind = 6;
+    bool isIncognito = 7;
+    string priority = 8;
+}
+
+
+message ResolvedRoom {
+    string id  = 1;
+    string AccountID  = 2;
+    string roomID  = 3;
+    string agentID  = 4;
+    string reason  = 5;
+    int64 startedAt  = 6;
+    int64 endAt  = 7;
+    repeated string departmentsIDs = 8;
+    string reasonDetails = 9;
+}
+
+message RoomDepartment {
+    string departmentID = 1;
+    string name = 2;
+    string dateTime = 3;
+}
+
+message Room {
+    string roomID  = 1;
+    string name  = 2;
+    string kind  = 3;
+    string owner  = 4;
+    string cursor  = 5;
+    int64 createdAt  = 6;
+    repeated int64 resumedAtHistory = 9;
+    repeated RoomUser users = 10;
+    repeated RoomStudentState usersRoomState = 11;
+    repeated Message messages = 12;
+    repeated Tag tags = 14;
+    VisitorInfo visitorInfo = 15;
+    int64 lastMessageAt = 16;
+    Message lastMessage = 17;
+    int64 messagesCount = 18;
+    bool isActive = 19;
+    int32 unreadCount = 20;
+    int64 lastReadTimestamp = 21;
+    string resolutionReason = 22;
+    int64 resolutionDate = 23;
+    RoomDepartment currentDepartment = 24;
+    repeated RoomDepartment departments = 25;
+    bool isGroup = 26;
+    bool transfered = 27;
+    string agentPickerID = 28;
+    string resolutionReasonDetail = 29;
+}
+
+message Rooms {
+    repeated Room rooms = 1;
+    uint32 total = 2;
+}
+
+message GetRoomsRequest {
+    string accountID = 1;
+    string agentID = 2;
+    string kind = 3;
+    uint32 limit = 4;
+    string after = 5;
+    string before = 6;
+    string status = 7;
+    string searchTerm = 8;
+}
+
+message GetRoomRequest {
+    string roomID = 1;
+    string accountID = 2;
+    string agentID = 3;
+    string messagesBefore = 4;
+    string messagesAfter = 5;
+    int64 messagesLimit = 6;
+}
+
+message GetSearchMessagesRequest {
+    string roomID = 1;
+    string accountID = 2;
+    string searchTarget = 3;
+    string lastMessageCursor = 4;
+    int64 messagesLimit = 5;
+}
+
+message GetRoomsByUsersRequest {
+    string accountID = 1;
+    repeated string users = 2;
+  }
+
+message MultiDeleteRequest {
+    repeated uint32 ids = 1;
+    string accountID = 2;
+    string deletedBy = 3; 
+}
+message MultiStudentsDeleteRequest {
+    repeated string ids = 1;
+    string accountID = 2;
+    string deletedBy = 3; 
+}
+
+message OperationStatus {
+    bool completed = 1;
+}
+
+message Profile {
+	string id = 1;
+	string accountID = 2;
+	string name = 3;
+    string phone = 4;
+    string email = 5;
+    string address = 6;
+    string gender = 7;
+    string company = 8;
+    string job = 9;
+    string lastSeen = 10;
+    string lastChat = 11;
+    repeated ProfileNotification notifications = 12;
+    ProfileData data = 13;
+}
+
+message ProfileNotification {
+    string id = 1;
+    string content = 3;
+}
+
+message ProfileData {
+    string navigator = 2;
+    string device_type = 3;
+    string ip = 4;
+    string average_basket_value = 5;
+    int32 transaction_number = 6;
+    ProfileLocation location = 7;
+    string language = 8;
+    int64 time = 9;
+    ProfileRating rating = 10;
+}
+
+message ProfileLocation {
+    string country = 1;
+    string city = 2;
+}
+
+message ProfileRating {
+    float overallRating = 1;
+    repeated RatingDetails ratingDetail = 2;
+}
+
+message RatingDetails {
+    int32 ratio = 1;
+    string vote = 2;
+}
+
+message GetProfileRequest {
+    string id = 1;
+}
+
+message GetProfileResponse {
+    Profile profile =1;
+}
+
+message GetProfilesRequest {
+    string AccountID = 1;
+    int64 limit = 2;
+    int64 skip = 3;
+}
+
+message GetProfilesResponse {
+    repeated Profile profiles = 1;
+}
+
+message AddProfileRequest {
+    string accountID = 1;
+	string name = 2;
+    string phone = 3;
+    string email = 4;
+    string address = 5;
+    string gender = 6;
+    string company = 7;
+    string job = 8;
+    string lastSeen = 9;
+    string lastChat = 10;
+    AddProfileDataRequest data = 11;
+}
+
+message AddProfileDataRequest {
+    string navigator = 1;
+    string device_type = 2;
+    string ip = 3;
+    string average_basket_value = 4;
+    int32 transaction_number = 5;
+    AddProfileLocationRequest location = 6;
+    string language = 7;
+    int64 time = 8;
+}
+
+message AddProfileLocationRequest {
+    string country = 1;
+    string city = 2;
+}
+
+
+message AddProfileResponse {
+    string id = 1;
+    bool success = 2;
+}
+
+message UpdateProfileRequest {
+    string id = 1;
+	string name = 2;
+    string phone = 3;
+    string email = 4;
+    string address = 5;
+    string gender = 6;
+    string company = 7;
+    string job = 8;
+    string lastSeen = 9;
+    string lastChat = 10;
+    UpdateProfileDataRequest data = 11;
+}
+
+message UpdateProfileDataRequest {
+    string navigator = 1;
+    string device_type = 2;
+    string ip = 3;
+    string average_basket_value = 4;
+    int32 transaction_number = 5;
+    UpdateProfileLocationRequest location = 6;
+    string language = 7;
+    int64 time = 8;
+}
+
+message UpdateProfileLocationRequest{
+    string country = 1;
+    string city = 2;
+}
+
+message UpdateProfileResponse {
+    string id = 1;
+    bool success = 2;
+}
+
+message DeleteProfileRequest {
+    string id = 1;
+}
+
+message DeleteProfileResponse {
+    string id = 1;
+    bool success = 2;
+}
+
+message Notification  {
+  string id = 1 ;      
+	string title = 2;
+	int64 timestamp = 3;       
+	string content = 4;
+	string roomID = 5;
+	string category = 6;   
+  string type = 7;
+	string targetID = 8; 
+  string targetType = 9;
+  sender sender = 10;
+  string formattedTimestamp = 11;
+}
+
+message sender {
+  string id = 1;
+  string username = 2;
+  string avatar = 3;
+}
+
+message GetNotificationsRequest {
+    string AccountID = 1;
+    string TargetID = 2;
+    int32 count = 3;
+    int32 skip = 4;
+}
+
+message GetPreviousRoomsRequest{
+    string visitorID = 1;
+    int64 limit = 2;
+    int64 skip = 3;
+}
+
+message GetNotificationsResponse {
+    repeated Notification notifications = 1;
+}
+
+message GetPreviousRoomsResponse{
+    repeated Room rooms = 1;
+}
+
+message Account {
+    int32 id = 1;
+    string account_id = 2;
+    string company = 3;
+    string status = 4;
+    string plan_id = 5;
+    string website = 6;
+}
+
+message Accounts {
+    repeated Account accounts = 1;
+}
+
+message GetAccountInfoRequest{
+  string accountID = 1;
+}
+
+message GetAccountInfoResponse{
+  string company = 1;
+  string website = 2;
+}
+
+message SaveGetInTouchRequest {
+    string firstName = 1;
+    string lastName = 2;
+    string email = 3;
+    string phone = 4;
+    string message = 5;
+    bool agree = 6;
+}
+message SaveGetInTouchResponse {
+    string message = 1;
+}
+
+message AddNewsletterEmailRequest{
+    string email = 1;
+}
+message AddNewsletterEmailResponse{
+    string message = 1;
+}
+
+message DeleteNewsletterEmailRequest{
+    string email = 1;
+}
+
+message DeleteNewsletterEmailResponse{
+    string message = 1;
+}
+
+message UpdateStudentOnlineStatusRequest{
+    string agentID = 1;
+    bool onlineStatus = 2;
+}
+
+
+service UserService {
+    rpc GetStudents(AccountID) returns (Students) {}
+    rpc GetStudent(GetStudentRequest) returns (Student) {}
+    rpc GetStudentsByDepartment(GetStudentsByDepartmentRequest) returns (Students) {}
+    rpc GetUser(GetUserRequest) returns (User) {}
+    rpc GetUserByID(GetUserByIDRequest) returns (User) {}
+
+    rpc AddStudent(StudentAddRequest) returns (Student) {}
+
+    rpc UpdateStudentStatus(UpdateStudentStatusRequest) returns (UpdateStudentStatusResponse) {}
+    rpc UpdateStudent(StudentUpdateRequest) returns (Student) {}
+    rpc DeleteStudent(DeleteStudentRequest) returns (StudentID) {}
+    rpc DeleteStudents(MultiStudentsDeleteRequest) returns (OperationStatus) {}
+
+    rpc GetVisitors(AccountID) returns (Visitors) {}
+    rpc GetVisitor(VisitorReq) returns (Visitor) {}
+    rpc VisitorExists(VisitorReq) returns (VisitorExistsRes) {};
+    rpc AddVisitor(Visitor) returns (Visitor) {};
+ 
+    rpc GetDepartments(AccountID) returns (Departments) {}
+    rpc GetDepartment(GetDepartmentRequest) returns (Department) {}
+
+    rpc AddDepartment(AddDepartmentRequest) returns (Department) {}
+    rpc UpdateDepartment(UpdateDepartmentRequest) returns (Department) {}
+    rpc UpdateDepartmentStatus(UpdateStatusDepartment) returns (Department) {}
+    rpc DeleteDepartment(DeleteDepartmentRequest) returns (DepartmentID) {}
+    rpc DeleteDepartments(MultiDeleteRequest) returns (OperationStatus) {}
+
+    rpc GetCustomer(AccountID) returns (Customer) {}
+    rpc AddCustomerAccount(CustomerAccount) returns (CustomerAccount) {}
+    rpc ResetPassword(ResetPasswordRequest) returns (ResetPasswordResponse) {}
+    rpc PasswordResetLinkHealth(PasswordResetLinkHealthRequest) returns (PasswordResetLinkHealthResponse) {}
+    rpc ChangePasswordByLink(PasswordChangeByLinkRequest) returns (PasswordChangeByLinkResponse) {}
+    rpc Signup(SignupRequest) returns (SignupResponse) {}
+    rpc GetInvites(GetInvitesRequest) returns (GetInvitesResponse) {}
+    rpc CancelInvite(CancelInviteRequest) returns (CancelInviteResponse) {}
+    rpc UpdateCompanyDetails(UpdateCompanyDetailsRequest) returns (UpdateCompanyDetailsResponse) {}
+    rpc StudentSignup(StudentSignupRequest) returns (StudentSignupResponse) {}
+    rpc DoesEmailExist(DoesEmailExistRequest) returns (DoesEmailExistResponse) {}
+    rpc DoesUserNameExist(DoesUserNameExistRequest) returns (DoesUserNameExistResponse) {}
+    rpc SendInstallationCodeToDev(SendInstallationCodeToDevRequest) returns (SendInstallationCodeToDevResponse) {}
+    rpc InviteStudents(InviteStudentsRequest) returns (InviteStudentsResponse) {}
+    rpc GenerateShareableLink(GenerateShareableLinkRequest) returns (GenerateShareableLinkResponse) {}
+    rpc IsSignupLinkValid(IsSignupLinkValidRequest) returns (IsSignupLinkValidResponse) {}
+    
+    rpc GetRooms(GetRoomsRequest) returns (Rooms) {}
+    rpc GetRoom(GetRoomRequest) returns (Room) {}
+    rpc GetPreviousRooms(GetPreviousRoomsRequest) returns (GetPreviousRoomsResponse){}
+    rpc GetRoomsByUsers(GetRoomsByUsersRequest) returns (Rooms) {}
+    
+    rpc GetMessages(GetMessagesRequest) returns (GetMessagesResponse){}
+    rpc GetSearchMessages(GetSearchMessagesRequest) returns (Messages) {}
+    rpc GetForm(GetFormRequest) returns (GetFormResponse) {}
+
+    rpc GetProfile(GetProfileRequest) returns (GetProfileResponse) {}
+    rpc GetProfiles(GetProfilesRequest) returns (GetProfilesResponse) {}
+    rpc AddProfile(AddProfileRequest) returns (AddProfileResponse)  {}
+    rpc UpdateProfile(UpdateProfileRequest) returns (UpdateProfileResponse) {}
+    rpc DeleteProfile(DeleteProfileRequest) returns (DeleteProfileResponse) {}
+
+    rpc GetNotifications(GetNotificationsRequest) returns (GetNotificationsResponse) {}
+    rpc GetAccounts(Empty) returns (Accounts) {}
+
+
+    rpc StudentPasswordReset(StudentPasswordResetRequest)returns (OperationStatus){}
+    rpc GetAccountInfo(GetAccountInfoRequest)returns (GetAccountInfoResponse){}
+    rpc AddNewsletterEmail(AddNewsletterEmailRequest)returns (AddNewsletterEmailResponse){}
+    rpc DeleteNewsletterEmail(DeleteNewsletterEmailRequest)returns (DeleteNewsletterEmailResponse){}
+    rpc SaveGetInTouch(SaveGetInTouchRequest)returns (SaveGetInTouchResponse){}
+    rpc UpdateStudentOnlineStatus(UpdateStudentOnlineStatusRequest)returns (OperationStatus){}
+}
