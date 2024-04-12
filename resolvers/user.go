@@ -10,6 +10,7 @@ import (
 )
 
 func (s *Server) GetUser(ctx context.Context, user *users.GetUserRequest) (*users.User, error) {
+	log.Println("Get User Started ...")
 	var (
 		userID,
 		accountID,
@@ -37,7 +38,7 @@ func (s *Server) GetUser(ctx context.Context, user *users.GetUserRequest) (*user
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, Err("wrong password or email")
 		}
-		return nil, ErrInternal
+		return nil, err
 	}
 
 	//AccountStatus AccountStatus `json:"account"`
@@ -63,8 +64,8 @@ func (s *Server) GetUser(ctx context.Context, user *users.GetUserRequest) (*user
 		&planID,
 		&userType)
 	if err != nil {
-		log.Printf("Failed to scan agent: %v", err)
-		return nil, ErrInternal
+		log.Printf("Failed to scan user: %v", err)
+		return nil, err
 	}
 
 	//get permision
@@ -72,9 +73,10 @@ func (s *Server) GetUser(ctx context.Context, user *users.GetUserRequest) (*user
 	err = s.DB.QueryRow(`
 	SELECT write_comment,live,settings FROM permissions
 	WHERE account_id = $1;
-	`, &accountID).Scan(&writeComment, live, settings)
+	`, &accountID).Scan(&writeComment, &live, &settings)
 	if err != nil {
-		return nil, ErrInternal
+		log.Printf("Failed to scan permissions: %v", err)
+		return nil, err
 	}
 
 	//get plan (TO DO  )
@@ -99,8 +101,9 @@ func (s *Server) GetUser(ctx context.Context, user *users.GetUserRequest) (*user
 			WriteComment: writeComment,
 			Live:         live,
 			Settings:     settings,
-			AccountId:    accountID,
+			AccountID:    accountID,
 		},
+		UserType: userType,
 	}, nil
 }
 
@@ -146,7 +149,7 @@ func (s *Server) GetUserByID(ctx context.Context, user *users.GetUserByIDRequest
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrInvalidInput("id", "doesn't exist")
 		}
-		return nil, ErrInternal
+		return nil, err
 	}
 
 	//get permision
@@ -156,7 +159,7 @@ func (s *Server) GetUserByID(ctx context.Context, user *users.GetUserByIDRequest
 	WHERE account_id = $1;
 	`, &accountID).Scan(&writeComment, live, settings)
 	if err != nil {
-		return nil, ErrInternal
+		return nil, err
 	}
 
 	//get plan (TO DO  )
@@ -181,7 +184,7 @@ func (s *Server) GetUserByID(ctx context.Context, user *users.GetUserByIDRequest
 			WriteComment: writeComment,
 			Live:         live,
 			Settings:     settings,
-			AccountId:    accountID,
+			AccountID:    accountID,
 		},
 	}, nil
 }

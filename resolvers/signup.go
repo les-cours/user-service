@@ -59,22 +59,27 @@ func (s *Server) DoesSignupLinkExist(ctx context.Context, email string) (bool, e
 	return exists, nil
 }
 
-func (s *Server) Signup(ctx context.Context, in *users.SignupRequest) (*users.SignupResponse, error) {
+func (s *Server) StudentSignup(ctx context.Context, in *users.StudentSignupRequest) (*users.StudentSignupResponse, error) {
 
 	var err error
 
 	/*
 		VALIDATION
 	*/
+	checkEmail, _ := s.DoesEmailExist(ctx, &users.DoesEmailExistRequest{
+		Type:  "student",
+		Email: in.Email,
+	})
+
 	switch {
 	case err != nil:
 		return nil, ErrInternal
-
 	case !utils.ValidateFirstname(in.Firstname):
 		return nil, ErrInvalidInput("first", "must be > 1 and < 64")
-
 	case !utils.ValidateLastname(in.Lastname):
 		return nil, ErrInvalidInput("lastName", "must be > 1 and < 64")
+	case checkEmail.Exists:
+		return nil, ErrInvalidInput("email", "wrong")
 	}
 
 	/*
@@ -205,7 +210,7 @@ func (s *Server) Signup(ctx context.Context, in *users.SignupRequest) (*users.Si
 		return nil, err
 	}
 
-	return &users.SignupResponse{
+	return &users.StudentSignupResponse{
 		Succeeded: true,
 		AccessToken: &users.AccessToken{
 			Token:     res.AccessToken.Token,

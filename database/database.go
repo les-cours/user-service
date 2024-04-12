@@ -19,6 +19,7 @@ func StartDatabase() (*sql.DB, error) {
 		env.Settings.Database.PSQLConfig.DbName,
 		env.Settings.Database.PSQLConfig.SslMode,
 	)
+	log.Println(dbinfo)
 	db, err := sql.Open("postgres", dbinfo)
 	log.Println("staging dbinfo", dbinfo)
 

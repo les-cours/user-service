@@ -9,7 +9,7 @@ import (
 	"log"
 )
 
-func (s *Server) StudentPasswordReset(ctx context.Context, in *users.StudentPasswordResetRequest) (*users.OperationStatus, error) {
+func (s *Server) UserPasswordReset(ctx context.Context, in *users.UserPasswordResetRequest) (*users.OperationStatus, error) {
 
 	var studentInfo = struct {
 		Firstname string
@@ -23,15 +23,15 @@ func (s *Server) StudentPasswordReset(ctx context.Context, in *users.StudentPass
 	var err = s.DB.QueryRow(
 		`	
         SELECT 
-            email, firstname, lastname
+            email, s.firstname, s.lastname
 		FROM 
-		    students
-		INNER JOIN accounts ON students.account_id = accounts.account_id
+		    accounts
+		Inner Join public.students s on accounts.account_id = s.id
 		WHERE 
-		    students.id = $1
+		    accounts.account_id = $1
 		  AND accounts.password = crypt($2, accounts.password)
 		`,
-		in.AccountId, in.OldPassword).Scan(&studentInfo.Email, &studentInfo.Firstname, &studentInfo.Lastname)
+		in.UserID, in.OldPassword).Scan(&studentInfo.Email, &studentInfo.Firstname, &studentInfo.Lastname)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -41,8 +41,8 @@ func (s *Server) StudentPasswordReset(ctx context.Context, in *users.StudentPass
 	}
 
 	var _ = s.DB.QueryRow(
-		`UPDATE accounts SET password = crypt($1,gen_salt('bf', 8)) WHERE id = $2`,
-		in.NewPassword, in.AccountId)
+		`UPDATE accounts SET password = crypt($1,gen_salt('bf', 8)) WHERE account_id = $2`,
+		in.NewPassword, in.UserID)
 	if err != nil {
 		return nil, ErrInternal
 	}
