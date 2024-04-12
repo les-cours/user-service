@@ -100,7 +100,7 @@ message StudentSignupResponse {
 
 
 message GetUserByIDRequest {
-    string userID = 2;
+    string accountID = 1;
 }
 message User {
         string id = 1;

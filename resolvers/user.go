@@ -12,7 +12,6 @@ import (
 func (s *Server) GetUser(ctx context.Context, user *users.GetUserRequest) (*users.User, error) {
 	log.Println("Get User Started ...")
 	var (
-		userID,
 		accountID,
 		username,
 		firstname,
@@ -47,14 +46,13 @@ func (s *Server) GetUser(ctx context.Context, user *users.GetUserRequest) (*user
 	err = s.DB.QueryRow(
 		`
 		SELECT 
-		students.id, students.username, accounts.email, students.firstname, students.lastname,  students.avatar , accounts.status, accounts.plan_id,accounts.user_type
+		 students.username, accounts.email, students.firstname, students.lastname,  students.avatar , accounts.status, accounts.plan_id,accounts.user_type
 		FROM 
 		students
-		INNER JOIN accounts ON accounts.account_id = students.account_id
+		INNER JOIN accounts ON accounts.account_id = students.student_id
 		WHERE
 	 	(accounts.account_id = $1)
 		`, &accountID).Scan(
-		&userID,
 		&username,
 		&email,
 		&firstname,
@@ -83,7 +81,7 @@ func (s *Server) GetUser(ctx context.Context, user *users.GetUserRequest) (*user
 	//ADD TABLE SUBSCRIPTION AND GET PLAN INFORMATION
 
 	return &users.User{
-		Id:        userID,
+		Id:        accountID,
 		AccountID: accountID,
 		Username:  username,
 		FirstName: firstname,
@@ -109,8 +107,6 @@ func (s *Server) GetUser(ctx context.Context, user *users.GetUserRequest) (*user
 
 func (s *Server) GetUserByID(ctx context.Context, user *users.GetUserByIDRequest) (*users.User, error) {
 	var (
-		userID,
-		accountID,
 		username,
 		firstname,
 		lastname,
@@ -126,17 +122,17 @@ func (s *Server) GetUserByID(ctx context.Context, user *users.GetUserByIDRequest
 	//	//change query to teacher
 	//}
 
+	log.Println("id : ", user.AccountID)
 	err = s.DB.QueryRow(
 		`
 		SELECT 
-		students.id, students.username, accounts.email, students.firstname, students.lastname,  students.avatar , accounts.status, accounts.plan_id,accounts.user_type
+		students.username, accounts.email, students.firstname, students.lastname,  students.avatar , accounts.status, accounts.plan_id,accounts.user_type
 		FROM 
 		students
-		INNER JOIN accounts ON accounts.account_id = students.account_id
+		INNER JOIN accounts ON accounts.account_id = students.student_id
 		WHERE
 	 	(accounts.account_id = $1)
-		`, &user.UserID).Scan(
-		&userID,
+		`, &user.AccountID).Scan(
 		&username,
 		&email,
 		&firstname,
@@ -146,7 +142,9 @@ func (s *Server) GetUserByID(ctx context.Context, user *users.GetUserByIDRequest
 		&planID,
 		&userType)
 	if err != nil {
+		log.Println("err SELECT students", err)
 		if errors.Is(err, sql.ErrNoRows) {
+
 			return nil, ErrInvalidInput("id", "doesn't exist")
 		}
 		return nil, err
@@ -157,7 +155,7 @@ func (s *Server) GetUserByID(ctx context.Context, user *users.GetUserByIDRequest
 	err = s.DB.QueryRow(`
 	SELECT write_comment,live,settings FROM permissions
 	WHERE account_id = $1;
-	`, &accountID).Scan(&writeComment, live, settings)
+	`, &user.AccountID).Scan(&writeComment, &live, &settings)
 	if err != nil {
 		return nil, err
 	}
@@ -166,8 +164,8 @@ func (s *Server) GetUserByID(ctx context.Context, user *users.GetUserByIDRequest
 	//ADD TABLE SUBSCRIPTION AND GET PLAN INFORMATION
 
 	return &users.User{
-		Id:        userID,
-		AccountID: accountID,
+		Id:        user.AccountID,
+		AccountID: user.AccountID,
 		Username:  username,
 		FirstName: firstname,
 		LastName:  lastname,
@@ -184,7 +182,7 @@ func (s *Server) GetUserByID(ctx context.Context, user *users.GetUserByIDRequest
 			WriteComment: writeComment,
 			Live:         live,
 			Settings:     settings,
-			AccountID:    accountID,
+			AccountID:    user.AccountID,
 		},
 	}, nil
 }

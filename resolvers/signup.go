@@ -3,11 +3,13 @@ package resolvers
 import (
 	"context"
 	"database/sql"
+	"errors"
+	"log"
+
 	"github.com/google/uuid"
 	"github.com/les-cours/user-service/api/auth"
 	"github.com/les-cours/user-service/api/users"
 	"github.com/les-cours/user-service/utils"
-	"log"
 )
 
 func (s *Server) DoesUserNameExist(ctx context.Context, in *users.DoesUserNameExistRequest) (*users.DoesUserNameExistResponse, error) {
@@ -44,29 +46,17 @@ func (s *Server) DoesEmailExist(ctx context.Context, in *users.DoesEmailExistReq
 	}, nil
 }
 
-func (s *Server) DoesSignupLinkExist(ctx context.Context, email string) (bool, error) {
-	exists := false
-
-	err := s.DB.QueryRow(
-		`SELECT exists (SELECT 1 FROM signup_links WHERE email = $1 LIMIT 1);
-	`, email).Scan(&exists)
-
-	if err != nil {
-		log.Println(err)
-		return false, err
-	}
-
-	return exists, nil
-}
-
 func (s *Server) StudentSignup(ctx context.Context, in *users.StudentSignupRequest) (*users.StudentSignupResponse, error) {
+
+	var accountID uuid.UUID
+	accountID, _ = uuid.NewRandom()
 
 	var err error
 
 	/*
 		VALIDATION
 	*/
-	checkEmail, _ := s.DoesEmailExist(ctx, &users.DoesEmailExistRequest{
+	checkEmail, err := s.DoesEmailExist(ctx, &users.DoesEmailExistRequest{
 		Type:  "student",
 		Email: in.Email,
 	})
@@ -94,15 +84,13 @@ func (s *Server) StudentSignup(ctx context.Context, in *users.StudentSignupReque
 		return nil, ErrInternal
 	}
 
-	var accountID string
-	err = tx.QueryRowContext(context.Background(),
+	_, err = tx.ExecContext(context.Background(),
 		`INSERT INTO accounts 
-		(email, password, status, user_type) VALUES($1, crypt($2, gen_salt('bf')), $3, $4)
-		 RETURNING account_id;`,
-		in.GetEmail(), in.GetPassword(), "active", "student").Scan(&accountID)
+		(account_id,email, password, status, user_type,plan_id) VALUES($1, $2,crypt($3,gen_salt('bf')),$4,$5,$6);`,
+		accountID, in.GetEmail(), in.GetPassword(), "active", "student", "PLAN_free")
 
 	if err != nil {
-		log.Println("107 : " + err.Error())
+		log.Printf("Err when set accounts err %v", err)
 		tx.Rollback()
 		return nil, ErrInternal
 	}
@@ -121,26 +109,18 @@ func (s *Server) StudentSignup(ctx context.Context, in *users.StudentSignupReque
 		return nil, ErrInternal
 	}
 
-	if len(in.Password) > 64 {
-		tx.Rollback()
-		return nil, ErrInvalidInput("password", "password length should not exceed 64 characters")
-	}
-
 	// generating avatar
 	var defaultAvatar string
 	defaultAvatar, err = utils.GenerateAvatar(in.Firstname, in.Lastname)
 
-	var studentID uuid.UUID
-	studentID, err = uuid.NewRandom()
 	_, err = tx.ExecContext(context.Background(),
 		`
 		INSERT INTO 
 		students
-		(id, account_id, username, firstname, lastname,default_avatar)
-		VALUES($1, $2, $3, $4, $5, $6) 
+		(student_id, username, firstname, lastname,default_avatar)
+		VALUES($1, $2, $3, $4, $5) 
 		RETURNING id;
 		`,
-		studentID,
 		accountID,
 		in.Firstname+in.Lastname,
 		in.Firstname,
@@ -153,33 +133,31 @@ func (s *Server) StudentSignup(ctx context.Context, in *users.StudentSignupReque
 		return nil, ErrInternal
 	}
 
-	var emailData = struct {
-		CompanyName string
-		Receiver    string
-	}{
-		CompanyName: "",
-		Receiver:    in.Email,
-	}
-
-	var emailSubject = "Account Registration confirmation"
-	var emailTemplate = "registration-confirmation"
-
-	message, err := utils.GenerateEmail(in.Email, emailSubject, emailTemplate, emailData)
-	if err != nil {
-		log.Println("Error generating email")
-		log.Println(err)
-		return nil, ErrInternal
-	}
-
-	go func() {
-		var _, err = s.SendGridClient.Send(message)
-		if err != nil {
-			log.Println("Error sending email")
-			log.Println(err)
-		}
-	}()
-
-	err = tx.Commit()
+	//var emailData = struct {
+	//	CompanyName string
+	//	Receiver    string
+	//}{
+	//	CompanyName: "",
+	//	Receiver:    in.Email,
+	//}
+	//
+	//var emailSubject = "Account Registration confirmation"
+	//var emailTemplate = "registration-confirmation"
+	//
+	//message, err := utils.GenerateEmail(in.Email, emailSubject, emailTemplate, emailData)
+	//if err != nil {
+	//	log.Println("Error generating email")
+	//	log.Println(err)
+	//	return nil, ErrInternal
+	//}
+	//
+	//go func() {
+	//	var _, err = s.SendGridClient.Send(message)
+	//	if err != nil {
+	//		log.Println("Error sending email")
+	//		log.Println(err)
+	//	}
+	//}()
 
 	if err != nil {
 		log.Println(err)
@@ -200,14 +178,20 @@ func (s *Server) StudentSignup(ctx context.Context, in *users.StudentSignupReque
 
 	// Generate token and send it to the user
 
-	res, err := s.AuthService.Signup(ctx, &auth.SignUpRequest{
-		UserName:  in.Firstname + in.Lastname,
-		Password:  in.Password,
-		AccountID: accountID,
-		StudentID: studentID.String(),
-	})
+	err = tx.Commit()
 	if err != nil {
+		tx.Rollback()
 		return nil, err
+	}
+
+	log.Println("id : signup => ", accountID, "and string : ", accountID.String())
+	res, err := s.AuthService.Signup(ctx, &auth.SignUpRequest{
+		AccountID: accountID.String(),
+		Email:     in.Email,
+	})
+
+	if err != nil {
+		return nil, errors.New("register success, but err when try login, login again")
 	}
 
 	return &users.StudentSignupResponse{

@@ -25,6 +25,7 @@ type AuthServiceClient interface {
 	VerifyToken(ctx context.Context, in *VerifyTokenRequest, opts ...grpc.CallOption) (*VerifyTokenResponse, error)
 	GenerateAccessToken(ctx context.Context, in *GenerateAccessTokenRequest, opts ...grpc.CallOption) (*GenerateAccessTokenResponse, error)
 	GenerateRefreshToken(ctx context.Context, in *GenerateRefreshTokenRequest, opts ...grpc.CallOption) (*GenerateRefreshTokenResponse, error)
+	GenerateVisitorToken(ctx context.Context, in *GenerateVisitorTokenRequest, opts ...grpc.CallOption) (*GenerateVisitorTokenResponse, error)
 	Signup(ctx context.Context, in *SignUpRequest, opts ...grpc.CallOption) (*SignUpResponse, error)
 }
 
@@ -63,6 +64,15 @@ func (c *authServiceClient) GenerateRefreshToken(ctx context.Context, in *Genera
 	return out, nil
 }
 
+func (c *authServiceClient) GenerateVisitorToken(ctx context.Context, in *GenerateVisitorTokenRequest, opts ...grpc.CallOption) (*GenerateVisitorTokenResponse, error) {
+	out := new(GenerateVisitorTokenResponse)
+	err := c.cc.Invoke(ctx, "/settings.AuthService/GenerateVisitorToken", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *authServiceClient) Signup(ctx context.Context, in *SignUpRequest, opts ...grpc.CallOption) (*SignUpResponse, error) {
 	out := new(SignUpResponse)
 	err := c.cc.Invoke(ctx, "/settings.AuthService/Signup", in, out, opts...)
@@ -79,6 +89,7 @@ type AuthServiceServer interface {
 	VerifyToken(context.Context, *VerifyTokenRequest) (*VerifyTokenResponse, error)
 	GenerateAccessToken(context.Context, *GenerateAccessTokenRequest) (*GenerateAccessTokenResponse, error)
 	GenerateRefreshToken(context.Context, *GenerateRefreshTokenRequest) (*GenerateRefreshTokenResponse, error)
+	GenerateVisitorToken(context.Context, *GenerateVisitorTokenRequest) (*GenerateVisitorTokenResponse, error)
 	Signup(context.Context, *SignUpRequest) (*SignUpResponse, error)
 	mustEmbedUnimplementedAuthServiceServer()
 }
@@ -95,6 +106,9 @@ func (UnimplementedAuthServiceServer) GenerateAccessToken(context.Context, *Gene
 }
 func (UnimplementedAuthServiceServer) GenerateRefreshToken(context.Context, *GenerateRefreshTokenRequest) (*GenerateRefreshTokenResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GenerateRefreshToken not implemented")
+}
+func (UnimplementedAuthServiceServer) GenerateVisitorToken(context.Context, *GenerateVisitorTokenRequest) (*GenerateVisitorTokenResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GenerateVisitorToken not implemented")
 }
 func (UnimplementedAuthServiceServer) Signup(context.Context, *SignUpRequest) (*SignUpResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Signup not implemented")
@@ -166,6 +180,24 @@ func _AuthService_GenerateRefreshToken_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthService_GenerateVisitorToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GenerateVisitorTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).GenerateVisitorToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/settings.AuthService/GenerateVisitorToken",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).GenerateVisitorToken(ctx, req.(*GenerateVisitorTokenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _AuthService_Signup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SignUpRequest)
 	if err := dec(in); err != nil {
@@ -202,6 +234,10 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GenerateRefreshToken",
 			Handler:    _AuthService_GenerateRefreshToken_Handler,
+		},
+		{
+			MethodName: "GenerateVisitorToken",
+			Handler:    _AuthService_GenerateVisitorToken_Handler,
 		},
 		{
 			MethodName: "Signup",
