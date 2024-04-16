@@ -180,6 +180,17 @@ message UserDetails{
     string email = 2;
 }
 
+
+message Teacher {
+    string teacherID = 2;
+    string username = 3;
+    string firstname = 5;
+    string lastname = 6;
+    string email = 7;
+}
+message  Teachers {
+    repeated Teacher teachers =1;
+}
 message TeacherSignupRequest {
     string firstname = 1;
     string lastname = 2;
@@ -197,6 +208,9 @@ message InviteTeacherRequest {
     UserDetails userDetails = 2;
 }
 
+message GetTeacherBySubjectRequest{
+    string subjectID = 1;
+}
 message OperationStatus {
     bool completed = 1;
 }
@@ -271,6 +285,7 @@ service UserService {
 
     rpc InviteTeacher(InviteTeacherRequest) returns (OperationStatus) {}
     rpc TeacherSignup(TeacherSignupRequest) returns (TeacherSignupResponse) {}
+    rpc GetTeacherBySubject(GetTeacherBySubjectRequest) returns (Teachers) {}
 
     /*
          USER
