@@ -5,8 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"github.com/les-cours/user-service/api/users"
-	"github.com/les-cours/user-service/utils"
-	"log"
 )
 
 func (s *Server) UserPasswordReset(ctx context.Context, in *users.UserPasswordResetRequest) (*users.OperationStatus, error) {
@@ -47,25 +45,18 @@ func (s *Server) UserPasswordReset(ctx context.Context, in *users.UserPasswordRe
 		return nil, ErrInternal
 	}
 
-	var emailData = struct {
-		Username string
-		Receiver string
-	}{
-		Username: studentInfo.Firstname + " " + studentInfo.Lastname,
-		Receiver: studentInfo.Email,
-	}
+	//var emailData = struct {
+	//	Username string
+	//	Receiver string
+	//}{
+	//	Username: studentInfo.Firstname + " " + studentInfo.Lastname,
+	//	Receiver: studentInfo.Email,
+	//}
+	//
+	//var emailSubject = "Password reset success"
+	//var emailTemplate = "password-reset-success"
 
-	var emailSubject = "Password reset success"
-	var emailTemplate = "password-reset-success"
-
-	message, err := utils.GenerateEmail(studentInfo.Email, emailSubject, emailTemplate, emailData)
-
-	go func() {
-		_, err = s.SendGridClient.Send(message)
-		if err != nil {
-			log.Println(err)
-		}
-	}()
+	//message, err := utils.GenerateEmail(studentInfo.Email, emailSubject, emailTemplate, emailData)
 
 	return &users.OperationStatus{
 		Completed: true,

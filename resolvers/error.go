@@ -11,7 +11,7 @@ func ErrNotFound(resource string) error {
 }
 
 func ErrInvalidInput(field string, reason string) error {
-	errInvalidInput := fmt.Sprintf("invalid input provided for field %s: %s", field, reason)
+	errInvalidInput := fmt.Sprintf("invalid %s: %s", field, reason)
 	return errors.New(errInvalidInput)
 }
 

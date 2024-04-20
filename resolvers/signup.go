@@ -69,7 +69,7 @@ func (s *Server) StudentSignup(ctx context.Context, in *users.StudentSignupReque
 	case !utils.ValidateLastname(in.Lastname):
 		return nil, ErrInvalidInput("lastName", "must be > 1 and < 64")
 	case checkEmail.Exists:
-		return nil, ErrInvalidInput("email", "wrong")
+		return nil, ErrInvalidInput("email", "exist already.")
 	}
 
 	/*
@@ -136,38 +136,31 @@ func (s *Server) StudentSignup(ctx context.Context, in *users.StudentSignupReque
 		return nil, ErrInternal
 	}
 
+	//generate 5 digital
+
+	//save them in confirmation_table
+
+	//
+
 	var emailData = struct {
 		CompanyName string
 		Receiver    string
 	}{
-		CompanyName: "",
+		CompanyName: in.Firstname + " " + in.Lastname,
 		Receiver:    in.Email,
 	}
 
 	var emailSubject = "Account Registration confirmation"
 	var emailTemplate = "registration-confirmation"
 
-	message, err := utils.GenerateEmail(in.Email, emailSubject, emailTemplate, emailData)
-	if err != nil {
-		log.Println("Error generating email")
-		log.Println(err)
-		return nil, ErrInternal
-	}
-
-	go func() {
-		var _, err = s.SendGridClient.Send(message)
-		if err != nil {
-			log.Println("Error sending email")
-			log.Println(err)
-		}
-	}()
+	err = utils.GenerateEmail(in.Email, emailSubject, emailTemplate, emailData)
 
 	if err != nil {
 		log.Println(err)
 		tx.Rollback()
 		return nil, ErrInternal
 	}
-	//_, err = s.StripeService.CreateFreeCustomer(ctx, &stripe.CreateFreeCustomerRequest{
+	//_, err = s.PaymentService.CreateFreeStudent(ctx, &payment.CreateFreeStudentRequest{
 	//	AccountID: accountID,
 	//	Email:     in.Email,
 	//	Name:      in.Firstname + " " + in.Lastname,
