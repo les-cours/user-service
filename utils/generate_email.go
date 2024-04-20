@@ -3,7 +3,6 @@ package utils
 import (
 	"bytes"
 	"embed"
-	"github.com/les-cours/user-service/env"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
 	"html/template"
 )
@@ -25,7 +24,7 @@ func GenerateEmail(receiver, subject, templateName string, data interface{}) (*m
 
 	result := tpl.String()
 
-	var from = mail.NewEmail("Emplorium", env.Settings.Noreply.Email)
+	var from = mail.NewEmail("School", "chouaib.chouache@univ-constantine2.dz")
 	var to = mail.NewEmail("", receiver)
 	var message = mail.NewSingleEmail(from, subject, to, "", result)
 

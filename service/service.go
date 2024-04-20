@@ -77,6 +77,7 @@ func Start() {
 	defer authConnectionService.Close()
 	authServiceClient := auth.NewAuthServiceClient(authConnectionService)
 
+	log.Printf("env apikey : %s ", env.Settings.Noreply.APIKey)
 	var sendgridClient = sendgrid.NewSendClient(env.Settings.Noreply.APIKey)
 
 	var s = resolvers.GetInstance(

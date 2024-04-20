@@ -16,7 +16,7 @@ func (s *Server) DoesUserNameExist(ctx context.Context, in *users.DoesUserNameEx
 	exists := false
 
 	err := s.DB.QueryRow(
-		`SELECT exists (SELECT 1 FROM students WHERE username = $1 LIMIT 1);
+		`SELECT exists (SELECT 1 FROM accounts WHERE username = $1 LIMIT 1);
 	`, in.Username).Scan(&exists)
 
 	if err != nil {
@@ -84,10 +84,11 @@ func (s *Server) StudentSignup(ctx context.Context, in *users.StudentSignupReque
 		return nil, ErrInternal
 	}
 
+	var userName = in.GetFirstname() + "_" + in.GetLastname()
 	_, err = tx.ExecContext(context.Background(),
 		`INSERT INTO accounts 
-		(account_id,email, password, status, user_type,plan_id) VALUES($1, $2,crypt($3,gen_salt('bf')),$4,$5,$6);`,
-		accountID, in.GetEmail(), in.GetPassword(), "active", "student", "PLAN_free")
+		(account_id,email,password,username, status, user_type,plan_id) VALUES($1, $2,crypt($3,gen_salt('bf')),$4,$5,$6,$7);`,
+		accountID, in.GetEmail(), in.GetPassword(), userName, "active", "student", "PLAN_free")
 
 	if err != nil {
 		log.Printf("Err when set accounts err %v", err)
@@ -104,7 +105,7 @@ func (s *Server) StudentSignup(ctx context.Context, in *users.StudentSignupReque
 		
 		`, &accountID)
 	if err != nil {
-		log.Println(err)
+		log.Println("Err When INSERT permissions err:", err)
 		tx.Rollback()
 		return nil, ErrInternal
 	}
@@ -117,47 +118,49 @@ func (s *Server) StudentSignup(ctx context.Context, in *users.StudentSignupReque
 		`
 		INSERT INTO 
 		students
-		(student_id, username, firstname, lastname,default_avatar)
-		VALUES($1, $2, $3, $4, $5) 
-		RETURNING id;
+		(student_id, firstname, lastname,default_avatar,grade_id,date_of_birth,gender,city_id)
+		VALUES($1, $2, $3, $4, $5,$6,$7,$8);
 		`,
 		accountID,
-		in.Firstname+in.Lastname,
 		in.Firstname,
 		in.Lastname,
 		defaultAvatar,
+		in.GradID,
+		in.Dob,
+		in.Gender,
+		in.CityID,
 	)
 	if err != nil {
-		log.Println(err)
+		log.Println("Err When INSERT students err:", err)
 		tx.Rollback()
 		return nil, ErrInternal
 	}
 
-	//var emailData = struct {
-	//	CompanyName string
-	//	Receiver    string
-	//}{
-	//	CompanyName: "",
-	//	Receiver:    in.Email,
-	//}
-	//
-	//var emailSubject = "Account Registration confirmation"
-	//var emailTemplate = "registration-confirmation"
-	//
-	//message, err := utils.GenerateEmail(in.Email, emailSubject, emailTemplate, emailData)
-	//if err != nil {
-	//	log.Println("Error generating email")
-	//	log.Println(err)
-	//	return nil, ErrInternal
-	//}
-	//
-	//go func() {
-	//	var _, err = s.SendGridClient.Send(message)
-	//	if err != nil {
-	//		log.Println("Error sending email")
-	//		log.Println(err)
-	//	}
-	//}()
+	var emailData = struct {
+		CompanyName string
+		Receiver    string
+	}{
+		CompanyName: "",
+		Receiver:    in.Email,
+	}
+
+	var emailSubject = "Account Registration confirmation"
+	var emailTemplate = "registration-confirmation"
+
+	message, err := utils.GenerateEmail(in.Email, emailSubject, emailTemplate, emailData)
+	if err != nil {
+		log.Println("Error generating email")
+		log.Println(err)
+		return nil, ErrInternal
+	}
+
+	go func() {
+		var _, err = s.SendGridClient.Send(message)
+		if err != nil {
+			log.Println("Error sending email")
+			log.Println(err)
+		}
+	}()
 
 	if err != nil {
 		log.Println(err)
@@ -184,7 +187,6 @@ func (s *Server) StudentSignup(ctx context.Context, in *users.StudentSignupReque
 		return nil, err
 	}
 
-	log.Println("id : signup => ", accountID, "and string : ", accountID.String())
 	res, err := s.AuthService.Signup(ctx, &auth.SignUpRequest{
 		AccountID: accountID.String(),
 		Email:     in.Email,

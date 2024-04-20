@@ -46,7 +46,7 @@ func (s *Server) GetUser(ctx context.Context, user *users.GetUserRequest) (*user
 	err = s.DB.QueryRow(
 		`
 		SELECT 
-		 students.username, accounts.email, students.firstname, students.lastname,  students.avatar , accounts.status, accounts.plan_id,accounts.user_type
+		 accounts.username, accounts.email, students.firstname, students.lastname,  students.avatar , accounts.status, accounts.plan_id,accounts.user_type
 		FROM 
 		students
 		INNER JOIN accounts ON accounts.account_id = students.student_id
@@ -126,7 +126,7 @@ func (s *Server) GetUserByID(ctx context.Context, user *users.GetUserByIDRequest
 	err = s.DB.QueryRow(
 		`
 		SELECT 
-		students.username, accounts.email, students.firstname, students.lastname,  students.avatar , accounts.status, accounts.plan_id,accounts.user_type
+		accounts.username, accounts.email, students.firstname, students.lastname,  students.avatar , accounts.status, accounts.plan_id,accounts.user_type
 		FROM 
 		students
 		INNER JOIN accounts ON accounts.account_id = students.student_id
