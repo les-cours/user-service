@@ -31,6 +31,7 @@ type UserServiceClient interface {
 	DeleteStudents(ctx context.Context, in *MultiStudentsDeleteRequest, opts ...grpc.CallOption) (*OperationStatus, error)
 	UpdateStudentOnlineStatus(ctx context.Context, in *UpdateStudentOnlineStatusRequest, opts ...grpc.CallOption) (*OperationStatus, error)
 	StudentSignup(ctx context.Context, in *StudentSignupRequest, opts ...grpc.CallOption) (*StudentSignupResponse, error)
+	EmailConfirmation(ctx context.Context, in *EmailConfirmationRequest, opts ...grpc.CallOption) (*OperationStatus, error)
 	InviteTeacher(ctx context.Context, in *InviteTeacherRequest, opts ...grpc.CallOption) (*OperationStatus, error)
 	TeacherSignup(ctx context.Context, in *TeacherSignupRequest, opts ...grpc.CallOption) (*TeacherSignupResponse, error)
 	GetTeacherBySubject(ctx context.Context, in *GetTeacherBySubjectRequest, opts ...grpc.CallOption) (*Teachers, error)
@@ -128,6 +129,15 @@ func (c *userServiceClient) UpdateStudentOnlineStatus(ctx context.Context, in *U
 func (c *userServiceClient) StudentSignup(ctx context.Context, in *StudentSignupRequest, opts ...grpc.CallOption) (*StudentSignupResponse, error) {
 	out := new(StudentSignupResponse)
 	err := c.cc.Invoke(ctx, "/users.UserService/StudentSignup", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) EmailConfirmation(ctx context.Context, in *EmailConfirmationRequest, opts ...grpc.CallOption) (*OperationStatus, error) {
+	out := new(OperationStatus)
+	err := c.cc.Invoke(ctx, "/users.UserService/EmailConfirmation", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -255,6 +265,7 @@ type UserServiceServer interface {
 	DeleteStudents(context.Context, *MultiStudentsDeleteRequest) (*OperationStatus, error)
 	UpdateStudentOnlineStatus(context.Context, *UpdateStudentOnlineStatusRequest) (*OperationStatus, error)
 	StudentSignup(context.Context, *StudentSignupRequest) (*StudentSignupResponse, error)
+	EmailConfirmation(context.Context, *EmailConfirmationRequest) (*OperationStatus, error)
 	InviteTeacher(context.Context, *InviteTeacherRequest) (*OperationStatus, error)
 	TeacherSignup(context.Context, *TeacherSignupRequest) (*TeacherSignupResponse, error)
 	GetTeacherBySubject(context.Context, *GetTeacherBySubjectRequest) (*Teachers, error)
@@ -300,6 +311,9 @@ func (UnimplementedUserServiceServer) UpdateStudentOnlineStatus(context.Context,
 }
 func (UnimplementedUserServiceServer) StudentSignup(context.Context, *StudentSignupRequest) (*StudentSignupResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StudentSignup not implemented")
+}
+func (UnimplementedUserServiceServer) EmailConfirmation(context.Context, *EmailConfirmationRequest) (*OperationStatus, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EmailConfirmation not implemented")
 }
 func (UnimplementedUserServiceServer) InviteTeacher(context.Context, *InviteTeacherRequest) (*OperationStatus, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method InviteTeacher not implemented")
@@ -508,6 +522,24 @@ func _UserService_StudentSignup_Handler(srv interface{}, ctx context.Context, de
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(UserServiceServer).StudentSignup(ctx, req.(*StudentSignupRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_EmailConfirmation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EmailConfirmationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).EmailConfirmation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/users.UserService/EmailConfirmation",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).EmailConfirmation(ctx, req.(*EmailConfirmationRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -770,6 +802,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "StudentSignup",
 			Handler:    _UserService_StudentSignup_Handler,
+		},
+		{
+			MethodName: "EmailConfirmation",
+			Handler:    _UserService_EmailConfirmation_Handler,
 		},
 		{
 			MethodName: "InviteTeacher",

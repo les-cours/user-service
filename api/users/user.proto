@@ -98,6 +98,10 @@ message StudentSignupResponse {
     SignupToken signupToken = 4;
 }
 
+message EmailConfirmationRequest {
+    string accountID = 1;
+    int64 code  = 2;
+}
 
 
 message GetUserByIDRequest {
@@ -275,7 +279,7 @@ service UserService {
     rpc DeleteStudents(MultiStudentsDeleteRequest) returns (OperationStatus) {}
     rpc UpdateStudentOnlineStatus(UpdateStudentOnlineStatusRequest)returns (OperationStatus){}
     rpc StudentSignup(StudentSignupRequest) returns (StudentSignupResponse) {}
-
+    rpc EmailConfirmation(EmailConfirmationRequest)returns (OperationStatus) {}
     /*
          TEACHER
      */

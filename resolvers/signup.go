@@ -4,12 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"log"
-
 	"github.com/google/uuid"
 	"github.com/les-cours/user-service/api/auth"
 	"github.com/les-cours/user-service/api/users"
 	"github.com/les-cours/user-service/utils"
+	"log"
+	"time"
 )
 
 func (s *Server) DoesUserNameExist(ctx context.Context, in *users.DoesUserNameExistRequest) (*users.DoesUserNameExistResponse, error) {
@@ -138,16 +138,24 @@ func (s *Server) StudentSignup(ctx context.Context, in *users.StudentSignupReque
 
 	//generate 5 digital
 
+	code := utils.GenerateConfirmationCode()
 	//save them in confirmation_table
-
+	expiresAt := time.Now().Add(time.Minute * 60).Unix()
+	_, err = tx.Exec(`INSERT INTO email_confirmation (account_id,code,expires_at) values ($1,$2,$3)`, accountID, code, expiresAt)
+	if err != nil {
+		log.Println("Code err: ", err)
+		return nil, err
+	}
 	//
 
 	var emailData = struct {
 		CompanyName string
 		Receiver    string
+		Code        int
 	}{
 		CompanyName: in.Firstname + " " + in.Lastname,
 		Receiver:    in.Email,
+		Code:        code,
 	}
 
 	var emailSubject = "Account Registration confirmation"
@@ -204,5 +212,36 @@ func (s *Server) StudentSignup(ctx context.Context, in *users.StudentSignupReque
 			Token:     res.SignupToken.Token,
 			ExpiresAt: res.SignupToken.ExpiresAt,
 		},
+	}, nil
+}
+
+func (s *Server) EmailConfirmation(ctx context.Context, in *users.EmailConfirmationRequest) (*users.OperationStatus, error) {
+	var code, expiresAt int64
+	err := s.DB.QueryRow(`SELECT code, expires_at FROM email_confirmation WHERE account_id = $1 LIMIT 1;`, in.AccountID).Scan(
+		&code, &expiresAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	if expiresAt-time.Now().Unix() < 0 {
+		return nil, ErrInvalidInput("code", "expires")
+	}
+
+	if code != in.Code {
+		return nil, ErrInvalidInput("code", "wrong code")
+	}
+
+	_, err = s.DB.Exec(`UPDATE accounts SET status = 'active' WHERE  account_id = $1;`, in.AccountID)
+	if err != nil {
+		return nil, err
+	}
+	_, err = s.DB.Exec(`DELETE FROM email_confirmation WHERE account_id = $1;`, in.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &users.OperationStatus{
+		Completed: true,
 	}, nil
 }
