@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"github.com/google/uuid"
 	"math/rand"
 )
 
@@ -11,4 +12,8 @@ func GenerateConfirmationCode() int {
 		code *= 10 + arr[rand.Int()%len(arr)]
 	}
 	return code
+}
+
+func GenerateUUIDString() string {
+	return uuid.NewString()
 }

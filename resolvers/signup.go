@@ -8,7 +8,6 @@ import (
 	"github.com/les-cours/user-service/api/auth"
 	"github.com/les-cours/user-service/api/users"
 	"github.com/les-cours/user-service/utils"
-	"log"
 	"time"
 )
 
@@ -20,7 +19,7 @@ func (s *Server) DoesUserNameExist(ctx context.Context, in *users.DoesUserNameEx
 	`, in.Username).Scan(&exists)
 
 	if err != nil {
-		log.Println(err)
+		s.Logger.Error(err.Error())
 		return nil, ErrInternal
 	}
 
@@ -37,7 +36,7 @@ func (s *Server) DoesEmailExist(ctx context.Context, in *users.DoesEmailExistReq
 	`, in.Email).Scan(&exists)
 
 	if err != nil {
-		log.Println(err)
+		s.Logger.Error(err.Error())
 		return nil, ErrInternal
 	}
 
@@ -80,7 +79,7 @@ func (s *Server) StudentSignup(ctx context.Context, in *users.StudentSignupReque
 	tx, err = s.DB.BeginTx(context.Background(), nil)
 	defer tx.Rollback()
 	if err != nil {
-		log.Printf("Err when BEGINTX err %v", err)
+		s.Logger.Error(err.Error())
 		return nil, ErrInternal
 	}
 
@@ -88,10 +87,10 @@ func (s *Server) StudentSignup(ctx context.Context, in *users.StudentSignupReque
 	_, err = tx.ExecContext(context.Background(),
 		`INSERT INTO accounts 
 		(account_id,email,password,username, status, user_type,plan_id) VALUES($1, $2,crypt($3,gen_salt('bf')),$4,$5,$6,$7);`,
-		accountID, in.GetEmail(), in.GetPassword(), userName, "active", "student", "PLAN_free")
+		accountID, in.GetEmail(), in.GetPassword(), userName, "inactive", "student", "PLAN_free")
 
 	if err != nil {
-		log.Printf("Err when set accounts err %v", err)
+		s.Logger.Error(err.Error())
 		tx.Rollback()
 		return nil, ErrInternal
 	}
@@ -105,7 +104,7 @@ func (s *Server) StudentSignup(ctx context.Context, in *users.StudentSignupReque
 		
 		`, &accountID)
 	if err != nil {
-		log.Println("Err When INSERT permissions err:", err)
+		s.Logger.Error(err.Error())
 		tx.Rollback()
 		return nil, ErrInternal
 	}
@@ -131,7 +130,7 @@ func (s *Server) StudentSignup(ctx context.Context, in *users.StudentSignupReque
 		in.CityID,
 	)
 	if err != nil {
-		log.Println("Err When INSERT students err:", err)
+		s.Logger.Error(err.Error())
 		tx.Rollback()
 		return nil, ErrInternal
 	}
@@ -143,7 +142,7 @@ func (s *Server) StudentSignup(ctx context.Context, in *users.StudentSignupReque
 	expiresAt := time.Now().Add(time.Minute * 60).Unix()
 	_, err = tx.Exec(`INSERT INTO email_confirmation (account_id,code,expires_at) values ($1,$2,$3)`, accountID, code, expiresAt)
 	if err != nil {
-		log.Println("Code err: ", err)
+		s.Logger.Error(err.Error())
 		return nil, err
 	}
 	//
@@ -164,7 +163,7 @@ func (s *Server) StudentSignup(ctx context.Context, in *users.StudentSignupReque
 	err = utils.GenerateEmail(in.Email, emailSubject, emailTemplate, emailData)
 
 	if err != nil {
-		log.Println(err)
+		s.Logger.Error(err.Error())
 		tx.Rollback()
 		return nil, ErrInternal
 	}
@@ -175,7 +174,7 @@ func (s *Server) StudentSignup(ctx context.Context, in *users.StudentSignupReque
 	//},
 	//)
 	//if err != nil {
-	//	log.Println(err)
+	//	s.Logger.Error(err.Error())
 	//	tx.Rollback()
 	//	return nil, ErrInternal
 	//}
@@ -221,7 +220,10 @@ func (s *Server) EmailConfirmation(ctx context.Context, in *users.EmailConfirmat
 		&code, &expiresAt,
 	)
 	if err != nil {
-		return nil, err
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNotFound("student")
+		}
+		return nil, ErrInternal
 	}
 
 	if expiresAt-time.Now().Unix() < 0 {
@@ -229,16 +231,16 @@ func (s *Server) EmailConfirmation(ctx context.Context, in *users.EmailConfirmat
 	}
 
 	if code != in.Code {
-		return nil, ErrInvalidInput("code", "wrong code")
+		return nil, ErrInvalidInput("code", "wrong")
 	}
 
 	_, err = s.DB.Exec(`UPDATE accounts SET status = 'active' WHERE  account_id = $1;`, in.AccountID)
 	if err != nil {
-		return nil, err
+		return nil, ErrInternal
 	}
 	_, err = s.DB.Exec(`DELETE FROM email_confirmation WHERE account_id = $1;`, in.AccountID)
 	if err != nil {
-		return nil, err
+		return nil, ErrInternal
 	}
 
 	return &users.OperationStatus{

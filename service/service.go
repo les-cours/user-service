@@ -2,9 +2,11 @@ package service
 
 import (
 	"github.com/sendgrid/sendgrid-go"
-	"log"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"net"
 	"net/http"
+	"os"
 	"runtime"
 
 	"github.com/les-cours/user-service/api/auth"
@@ -26,9 +28,9 @@ var (
 	goRoutineNum   = prometheus.NewGauge(prometheus.GaugeOpts{Name: "go_routines_num", Help: "the number of go routine "})
 )
 
-func monitoring_middleware(originalHandler http.Handler) http.HandlerFunc {
+func monitoringMiddleware(originalHandler http.Handler) http.HandlerFunc {
 
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
 
 		var m runtime.MemStats
 		runtime.ReadMemStats(&m)
@@ -36,62 +38,80 @@ func monitoring_middleware(originalHandler http.Handler) http.HandlerFunc {
 		goRoutineNum.Set(float64(runtime.NumGoroutine()))
 		requestCounter.Inc()
 		originalHandler.ServeHTTP(w, r)
-	})
+	}
+}
+
+func loggerInit() *zap.Logger {
+	encoderConfig := zap.NewDevelopmentEncoderConfig()
+	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	encoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
+	encoderConfig.EncodeCaller = zapcore.ShortCallerEncoder
+
+	core := zapcore.NewCore(
+		zapcore.NewJSONEncoder(encoderConfig),
+		zapcore.AddSync(os.Stdout),
+		zap.NewAtomicLevelAt(zap.InfoLevel),
+	)
+
+	logger := zap.New(core, zap.AddCaller(), zap.AddCallerSkip(0))
+	return logger
 }
 
 func Start() {
+	logger := loggerInit()
+	defer logger.Sync()
 	registry.MustRegister(requestCounter, memoryUsage, goRoutineNum)
 	promHandler := promhttp.HandlerFor(registry, promhttp.HandlerOpts{})
-	http.HandleFunc("/metrics", monitoring_middleware(promHandler))
-	log.Printf("Starting http server on port " + env.Settings.HttpPort)
+	http.HandleFunc("/metrics", monitoringMiddleware(promHandler))
+	logger.Info("Starting http server on port " + env.Settings.HttpPort)
 	go func() {
 		err := http.ListenAndServe(":"+env.Settings.HttpPort, nil)
 		if err != nil {
-			log.Fatalf("Error http server on port %v: %v", env.Settings.HttpPort, err)
+			logger.Info("Error http server on port :"+env.Settings.HttpPort, zap.Error(err))
 		}
 	}()
 
 	lis, err := net.Listen("tcp", ":"+env.Settings.GrpcPort)
 	if err != nil {
-		log.Fatalf("Failed to listen on port %v: %v", env.Settings.GrpcPort, err)
+		logger.Fatal("Failed to listen on port : "+env.Settings.GrpcPort, zap.Error(err))
 	}
 
 	db, err := database.StartDatabase()
 	if err != nil {
-		log.Fatalln(err)
+		logger.Error(err.Error())
 	}
 
 	//defer db.Close()
 	//mongoDB, err := database.StartMongoDB()
 	//if err != nil {
-	//	log.Fatalln(err)
+	//	logger.Fatalln(err)
 	//}
 	//
 	//defer mongoDB.Disconnect(context.Background())
 
-	log.Println("auth service connection: " + env.Settings.AuthService.Host + ":" + env.Settings.AuthService.Port)
+	logger.Info("auth service connection: " + env.Settings.AuthService.Host + ":" + env.Settings.AuthService.Port)
 	authConnectionService, err := grpc.Dial(env.Settings.AuthService.Host+":"+env.Settings.AuthService.Port, grpc.WithInsecure())
 	if err != nil {
-		log.Fatalln(err)
+		logger.Error(err.Error())
 	}
 	defer authConnectionService.Close()
 	authServiceClient := auth.NewAuthServiceClient(authConnectionService)
 
-	log.Printf("env apikey : %s ", env.Settings.Noreply.APIKey)
 	var sendgridClient = sendgrid.NewSendClient(env.Settings.Noreply.APIKey)
 
 	var s = resolvers.GetInstance(
 		db,
 		authServiceClient,
 		sendgridClient,
+		logger,
 	)
 
 	grpcServer := grpc.NewServer()
 	users.RegisterUserServiceServer(grpcServer, s)
-	log.Printf("Starting grpc server on port " + env.Settings.GrpcPort)
+	logger.Info("Starting grpc server on port " + env.Settings.GrpcPort)
 	err = grpcServer.Serve(lis)
 	if err != nil {
-		log.Fatalf("Failed to start gRPC server on port %v: %v", env.Settings.GrpcPort, err)
+		logger.Error("Failed to start gRPC server on port: "+env.Settings.GrpcPort, zap.Error(err))
 	}
 
 }

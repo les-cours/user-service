@@ -6,7 +6,7 @@ import (
 )
 
 func ErrNotFound(resource string) error {
-	errNotFound := fmt.Sprintf("resource %s not found", resource)
+	errNotFound := fmt.Sprintf("%s not found", resource)
 	return errors.New(errNotFound)
 }
 

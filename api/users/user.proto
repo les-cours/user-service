@@ -9,29 +9,16 @@ message Empty {}
     STUDENTS
  */
 message Students {
-    repeated Student agents = 1;
+    repeated Student students = 1;
 }
 message GetStudentsRequest{
-     string filterType = 1;
+     string filterType = 1;  //all,grad,subject,classroom
      string filterValue = 2;
 }
 message GetStudentRequest {
     string studentID = 2;
 }
-message StudentAddRequest {
-    string accountID = 1;
-    string studentID = 2;
-    string username = 3;
-    string password = 4;
-    string firstname = 5;
-    string lastname = 6;
-    string email = 7;
-    uint32 roleID = 8;
-    repeated string allowedIPS = 9;
-    repeated uint32 departments = 10;
-    string avatar = 11;
-    string defaultAvatar = 12;
-}
+
 message UpdateStudentStatusRequest {
     string studentID= 1;
     bool status = 2;
@@ -196,21 +183,20 @@ message Teacher {
 message  Teachers {
     repeated Teacher teachers =1;
 }
+
 message TeacherSignupRequest {
-    string firstname = 1;
-    string lastname = 2;
-    string password = 3;
-    string token = 4;
-    string email = 5;
+    string teacherID = 1;
+    string firstname = 2;
+    string lastname = 3;
+    string password = 4;
 }
-message TeacherSignupResponse {
-    bool succeeded = 1;
-    AccessToken accessToken = 2;
-    RefreshToken refreshToken = 3;
-}
-message InviteTeacherRequest {
+message TeacherSignupResponse{
     string token = 1;
-    UserDetails userDetails = 2;
+}
+
+message InviteTeacherRequest {
+    string email = 1;
+    repeated  string subjects = 2;
 }
 
 message GetTeacherBySubjectRequest{
@@ -270,9 +256,8 @@ message Permissions {
 }
 
 service UserService {
-    rpc GetStudents(GetStudentRequest) returns (Students) {}
+    rpc GetStudents(GetStudentsRequest) returns (Students) {}
     rpc GetStudent(GetStudentRequest) returns (Student) {}
-    rpc AddStudent(StudentAddRequest) returns (Student) {}
     rpc UpdateStudentStatus(UpdateStudentStatusRequest) returns (UpdateStudentStatusResponse) {}
     rpc UpdateStudent(StudentUpdateRequest) returns (Student) {}
     rpc DeleteStudent(DeleteStudentRequest) returns (OperationStatus) {}
