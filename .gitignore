@@ -1,3 +1,4 @@
 .idea
 /.idea
 /utils/email.go
+./utils/email.go

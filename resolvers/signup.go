@@ -138,11 +138,13 @@ func (s *Server) StudentSignup(ctx context.Context, in *users.StudentSignupReque
 	//generate 5 digital
 
 	code := utils.GenerateConfirmationCode()
+
 	//save them in confirmation_table
 	expiresAt := time.Now().Add(time.Minute * 60).Unix()
 	_, err = tx.Exec(`INSERT INTO email_confirmation (account_id,code,expires_at) values ($1,$2,$3)`, accountID, code, expiresAt)
 	if err != nil {
 		s.Logger.Error(err.Error())
+		tx.Rollback()
 		return nil, err
 	}
 	//
@@ -167,17 +169,6 @@ func (s *Server) StudentSignup(ctx context.Context, in *users.StudentSignupReque
 		tx.Rollback()
 		return nil, ErrInternal
 	}
-	//_, err = s.PaymentService.CreateFreeStudent(ctx, &payment.CreateFreeStudentRequest{
-	//	AccountID: accountID,
-	//	Email:     in.Email,
-	//	Name:      in.Firstname + " " + in.Lastname,
-	//},
-	//)
-	//if err != nil {
-	//	s.Logger.Error(err.Error())
-	//	tx.Rollback()
-	//	return nil, ErrInternal
-	//}
 
 	// Generate token and send it to the user
 
