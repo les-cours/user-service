@@ -43,8 +43,8 @@ message Student {
     string firstname = 5;
     string lastname = 6;
     string gender = 7;
-    string dateOfGirth = 8;
-    bool status = 9;
+    string dateOfBirth = 8;
+    string status = 9;
     string avatar = 10;
     bool notificationStatus = 11;
     bool onlineStatus = 12;

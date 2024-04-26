@@ -2,8 +2,8 @@ package resolvers
 
 import (
 	"database/sql"
+	"errors"
 	"github.com/les-cours/user-service/api/users"
-
 	"golang.org/x/net/context"
 )
 
@@ -28,36 +28,44 @@ func (s *Server) GetStudents(ctx context.Context, in *users.GetStudentsRequest) 
 		s.Logger.Error(err.Error())
 		return nil, err
 	}
-	var students *users.Students
+	students := &users.Students{}
+	student := &users.Student{}
 
-	var student *users.Student
 	for rows.Next() {
-		rows.Scan(&student.Firstname, &student.Lastname, &student.Username, &student.DateOfGirth, &student.Gender, &student.Status, &student.DefaultAvatar, &student.CityId)
-		students.Students = append(students.Students)
+		err = rows.Scan(&student.StudentId, &student.Firstname, &student.Lastname, &student.Username, &student.DateOfBirth, &student.Gender, &student.Status, &student.Avatar, &student.NotificationStatus, &student.OnlineStatus, &student.DefaultAvatar, &student.CityId)
+		if err != nil {
+			s.Logger.Error(err.Error())
+			return nil, ErrInternal
+		}
+		students.Students = append(students.Students, student)
 	}
 	return students, nil
 
 }
 
 func (s *Server) GetStudent(ctx context.Context, in *users.GetStudentRequest) (*users.Student, error) {
-
-	var student *users.Student
+	s.Logger.Info("starting GetStudent ...")
+	student := &users.Student{}
 
 	err := s.DB.QueryRow(`
 select 
-    firstname,lastname,a.username, date_of_birth,gender,a.status,avatar,notification_status,online_status,default_avatar,city_id
+    firstname,lastname,a.username,gender,a.status,avatar,notification_status,online_status,default_avatar,city_id,date_of_birth
     from  
-        students inner join public.accounts a on a.account_id = students.student_id;`).
-		Scan(&student.Firstname, &student.Lastname, &student.Username, &student.DateOfGirth, &student.Gender, &student.Status, &student.DefaultAvatar, &student.CityId)
+        students inner join accounts a on a.account_id = students.student_id where student_id = $1;`, in.StudentID).Scan(&student.Firstname, &student.Lastname, &student.Username, &student.Gender, &student.Status, &student.Avatar, &student.NotificationStatus, &student.OnlineStatus, &student.DefaultAvatar, &student.CityId, &student.DateOfBirth)
+
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNotFound("student")
+		}
 		s.Logger.Error(err.Error())
-		return nil, err
+		return nil, ErrInternal
 	}
+	student.StudentId = in.StudentID
 	return student, nil
 }
 
 const Query = `select 
-    firstname,lastname,a.username,date_of_birth,gender,a.status,avatar,notification_status,online_status,default_avatar,city_id
+   student_id,firstname,lastname,a.username,date_of_birth,gender,a.status,avatar,notification_status,online_status,default_avatar,city_id
     from  
         students inner join public.accounts a on a.account_id = students.student_id`
 
