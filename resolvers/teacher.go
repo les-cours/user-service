@@ -2,8 +2,14 @@ package resolvers
 
 import (
 	"context"
+	"database/sql"
+	"errors"
+	"github.com/les-cours/user-service/api/auth"
+	"github.com/les-cours/user-service/api/learning"
 	"github.com/les-cours/user-service/api/users"
+	"github.com/les-cours/user-service/env"
 	"github.com/les-cours/user-service/utils"
+	"strings"
 )
 
 func (s *Server) InviteTeacher(ctx context.Context, in *users.InviteTeacherRequest) (*users.OperationStatus, error) {
@@ -12,16 +18,24 @@ func (s *Server) InviteTeacher(ctx context.Context, in *users.InviteTeacherReque
 	for i := 1; i < len(in.Subjects); i++ {
 		subjectsString += "," + in.Subjects[i]
 	}
-	_, err := s.DB.Exec(`
+	tx, err := s.DB.BeginTx(ctx, nil)
+	if err != nil {
+		s.Logger.Error(err.Error())
+		tx.Rollback()
+		return nil, ErrInternal
+	}
+	_, err = tx.Exec(`
 INSERT INTO 
     teachers_invitations 
     (teacher_id, email, subjects) 
 VALUES ($1,$2,$3)`, teacherID, in.Email, subjectsString)
 	if err != nil {
-		return nil, err
+		s.Logger.Error(err.Error())
+		tx.Rollback()
+		return nil, ErrInternal
 	}
 
-	link := "localhost:3001/teacher/confirm?agentID=" + teacherID
+	link := env.Settings.TeacherConfirmEndPoint + teacherID
 	//Send Email :
 	var emailData = struct {
 		Receiver string
@@ -37,10 +51,15 @@ VALUES ($1,$2,$3)`, teacherID, in.Email, subjectsString)
 	err = utils.GenerateEmail(in.Email, emailSubject, emailTemplate, emailData)
 
 	if err != nil {
+		tx.Rollback()
 		s.Logger.Error(err.Error())
-		return nil, err
+		return nil, ErrInternal
 	}
-
+	err = tx.Commit()
+	if err != nil {
+		s.Logger.Error(err.Error())
+		return nil, ErrInternal
+	}
 	return &users.OperationStatus{
 		Completed: true,
 	}, nil
@@ -48,7 +67,88 @@ VALUES ($1,$2,$3)`, teacherID, in.Email, subjectsString)
 
 func (s *Server) TeacherSignup(ctx context.Context, in *users.TeacherSignupRequest) (*users.TeacherSignupResponse, error) {
 
-	return nil, nil
+	var subjectsString string
+	var email string
+
+	err := s.DB.QueryRow(`SELECT email,subjects FROM teachers_invitations WHERE teacher_id = $1;`, in.TeacherID).Scan(&email, &subjectsString)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, Err("you are not invited.")
+		}
+		return nil, err
+	}
+
+	tx, err := s.DB.BeginTx(ctx, nil)
+
+	if err != nil {
+		s.Logger.Error(err.Error())
+		tx.Rollback()
+		return nil, ErrInternal
+	}
+
+	var userName = "T_" + in.Firstname + "_" + in.Lastname
+	_, err = tx.ExecContext(context.Background(),
+		`INSERT INTO accounts 
+		(account_id,email,password,username, status, user_type) VALUES($1, $2,crypt($3,gen_salt('bf')),$4,$5,$6);`,
+		in.TeacherID, email, in.GetPassword(), userName, "active", "teacher")
+
+	if err != nil {
+		s.Logger.Error(err.Error())
+		tx.Rollback()
+		return nil, ErrInternal
+	}
+
+	_, err = tx.Exec(`INSERT INTO 
+    teachers 
+    (teacher_id, firstname, lastname) 
+VALUES ($1,$2,$3)`, in.TeacherID, in.Firstname, in.Lastname)
+	if err != nil {
+		s.Logger.Error(err.Error())
+		tx.Rollback()
+		return nil, ErrInternal
+	}
+
+	/*
+		GENERATE CLASSROOMS FOR HER/HIS SUBJECTS ...
+	*/
+
+	subjects := strings.Split(subjectsString, ",")
+	_, err = s.LearningService.CreateClassRooms(ctx, &learning.CreateClassRoomsRequest{
+		TeacherID:  in.TeacherID,
+		SubjectIDs: subjects,
+	})
+
+	if err != nil {
+		tx.Rollback()
+		s.Logger.Error(err.Error())
+		return nil, ErrInternal
+	}
+
+	/*
+		Permission
+	*/
+
+	/*
+		Commit
+	*/
+	err = tx.Commit()
+	if err != nil {
+		s.Logger.Error(err.Error())
+		return nil, ErrInternal
+	}
+
+	res, err := s.AuthService.Signup(ctx, &auth.SignUpRequest{
+		AccountID: in.TeacherID,
+		UserRole:  "teacher",
+	})
+
+	if err != nil {
+		return nil, ErrInternal
+	}
+
+	return &users.TeacherSignupResponse{
+		Token: res.AccessToken.Token,
+	}, nil
 }
 
 func (s *Server) GetTeachersBySubject(ctx context.Context, in *users.GetTeacherBySubjectRequest) ([]*users.Teacher, error) {

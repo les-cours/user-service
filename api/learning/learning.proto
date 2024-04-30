@@ -1,0 +1,16 @@
+syntax = "proto3";
+option go_package = "github.com/les-cours/learning-service/api/learning";
+package learning;
+
+message CreateClassRoomsRequest {
+  string teacherID = 1;
+  repeated string subjectIDs = 2;
+}
+
+message OperationStatus {
+  bool completed = 1;
+}
+
+service LearningService {
+  rpc CreateClassRooms(CreateClassRoomsRequest)returns (OperationStatus){}
+}

@@ -81,8 +81,6 @@ message StudentSignupRequest {
 message StudentSignupResponse {
     bool succeeded = 1;
     AccessToken accessToken = 2;
-    RefreshToken refreshToken = 3;
-    SignupToken signupToken = 4;
 }
 
 message EmailConfirmationRequest {
@@ -93,6 +91,7 @@ message EmailConfirmationRequest {
 
 message GetUserByIDRequest {
     string accountID = 1;
+    string userRole = 2;
 }
 message User {
         string id = 1;
@@ -101,12 +100,9 @@ message User {
         string firstName = 4;
         string lastName = 5;
         string email = 6;
-        Plan plan = 8;
-        repeated string allowedIPS = 9;
-        string department = 10;
         string avatar = 11;
-        Permissions Permissions = 12;
         string userType = 13;
+        Permissions Permissions = 12;
 }
 message GetUserRequest {
     string username = 1;
@@ -153,14 +149,8 @@ message AccessToken {
   int64 expiresAt = 2;
   string tokenType = 3;
 }
-message RefreshToken {
-  string token = 1;
-  int64 expiresAt = 2;
-}
-message SignupToken {
-  string token = 1;
-  int64 expiresAt = 2;
-}
+
+
 message IsSignupLinkValidRequest {
     string token = 1;
 }
@@ -189,6 +179,9 @@ message TeacherSignupRequest {
     string firstname = 2;
     string lastname = 3;
     string password = 4;
+    string dob = 5;
+    string gender = 6;
+    int32 cityID =7;
 }
 message TeacherSignupResponse{
     string token = 1;
@@ -248,11 +241,9 @@ message Plan {
     string require = 5;
 }
 message Permissions {
-    int32 id = 1;
     bool writeComment =2;
     bool live =3;
-    bool settings =4;
-    string accountID = 5;
+    bool upload =4;
 }
 
 service UserService {

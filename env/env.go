@@ -8,15 +8,15 @@ type Config struct {
 	GrpcPort               string
 	HttpPort               string
 	PasswordResetEndPoint  string
-	AccountConfirmEndPoint string
+	TeacherConfirmEndPoint string
 	StudentSignupEndpoint  string
 	SignupLinkLife         int
 	ResetPasswordLinkLife  int
 	JWTSignupTokenSecret   string
-	StripeFreePlan         string
 	Database               *DatabaseConfig
-	AuthService            *AuthServiceConfig
-	Noreply                *STMPCredentiels
+	AuthService            *ServiceConfig
+	LearningService        *ServiceConfig
+	NoreplyEmail           string
 }
 
 type DatabaseConfig struct {
@@ -32,18 +32,9 @@ type PSQLConfig struct {
 	SslMode  string
 }
 
-type AuthServiceConfig struct {
+type ServiceConfig struct {
 	Host string
 	Port string
-}
-
-type STMPCredentiels struct {
-	Host     string
-	Port     int
-	Username string
-	Password string
-	Email    string
-	APIKey   string
 }
 
 var Settings *Config
@@ -83,17 +74,11 @@ func init() {
 	viper.BindEnv("STRIPE_SERVICE_PORT")
 	viper.BindEnv("STRIPE_FREE_PLAN")
 
-	viper.BindEnv("STMP_HOST")
-	// viper.SetDefault("STMP_PORT", 465)
-	viper.BindEnv("STMP_PORT")
 	viper.BindEnv("NO_REPLY_EMAIL")
-	viper.BindEnv("SMTP_USERNAME")
-	viper.BindEnv("SMPT_PASSWORD")
-	viper.BindEnv("SEND_GRID_API_KEY")
 
 	viper.BindEnv("RESET_PASSWORD_ENDPOINT")
-	viper.BindEnv("ACCOUNT_CONFIRM_ENDPOINT")
-	viper.BindEnv("AGENT_SIGNUP_ENDPOINT")
+	viper.BindEnv("APP_TEACHER_CONFIRM_ENDPOINT")
+	viper.BindEnv("USER_SIGNUP_ENDPOINT")
 	viper.BindEnv("SIGNUP_LINK_LIFE")         // 30day
 	viper.BindEnv("RESET_PASSWORD_LINK_LIFE") //1800s == 30min
 	viper.BindEnv("JWT_SIGNUP_TOKEN_SECRET")
@@ -106,15 +91,20 @@ func init() {
 		HttpPort:               viper.GetString("HTTP_PORT"),
 		PasswordResetEndPoint:  viper.GetString("RESET_PASSWORD_ENDPOINT"),
 		ResetPasswordLinkLife:  viper.GetInt("RESET_PASSWORD_LINK_LIFE"),
-		AccountConfirmEndPoint: viper.GetString("ACCOUNT_CONFIRM_ENDPOINT"),
-		StudentSignupEndpoint:  viper.GetString("AGENT_SIGNUP_ENDPOINT"),
+		TeacherConfirmEndPoint: viper.GetString("TEACHER_CONFIRM_ENDPOINT"),
+		StudentSignupEndpoint:  viper.GetString("USER_SIGNUP_ENDPOINT"),
 		SignupLinkLife:         viper.GetInt("SIGNUP_LINK_LIFE"),
 		JWTSignupTokenSecret:   viper.GetString("JWT_SIGNUP_TOKEN_SECRET"),
-		StripeFreePlan:         viper.GetString("STRIPE_FREE_PLAN"),
+		NoreplyEmail:           viper.GetString("NO_REPLY_EMAIL"),
 
-		AuthService: &AuthServiceConfig{
+		AuthService: &ServiceConfig{
 			Host: viper.GetString("AUTH_SERVICE_HOST"),
 			Port: viper.GetString("AUTH_SERVICE_PORT"),
+		},
+
+		LearningService: &ServiceConfig{
+			Host: viper.GetString("LEARNING_SERVICE_HOST"),
+			Port: viper.GetString("LEARNING_SERVICE_PORT"),
 		},
 
 		Database: &DatabaseConfig{
@@ -126,14 +116,6 @@ func init() {
 				DbName:   viper.GetString("POSTGRES_DBNAME"),
 				SslMode:  viper.GetString("POSTGRES_SSL_MODE"),
 			},
-		},
-		Noreply: &STMPCredentiels{
-			Host:     viper.GetString("STMP_HOST"),
-			Port:     viper.GetInt("STMP_PORT"),
-			Username: viper.GetString("NO_REPLY_USERNAME"),
-			Password: viper.GetString("NO_REPLY_PASSWORD"),
-			Email:    viper.GetString("NO_REPLY_EMAIL"),
-			APIKey:   viper.GetString("SEND_GRID_API_KEY"),
 		},
 	}
 }

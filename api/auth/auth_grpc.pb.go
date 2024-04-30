@@ -23,9 +23,6 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AuthServiceClient interface {
 	VerifyToken(ctx context.Context, in *VerifyTokenRequest, opts ...grpc.CallOption) (*VerifyTokenResponse, error)
-	GenerateAccessToken(ctx context.Context, in *GenerateAccessTokenRequest, opts ...grpc.CallOption) (*GenerateAccessTokenResponse, error)
-	GenerateRefreshToken(ctx context.Context, in *GenerateRefreshTokenRequest, opts ...grpc.CallOption) (*GenerateRefreshTokenResponse, error)
-	GenerateVisitorToken(ctx context.Context, in *GenerateVisitorTokenRequest, opts ...grpc.CallOption) (*GenerateVisitorTokenResponse, error)
 	Signup(ctx context.Context, in *SignUpRequest, opts ...grpc.CallOption) (*SignUpResponse, error)
 }
 
@@ -46,33 +43,6 @@ func (c *authServiceClient) VerifyToken(ctx context.Context, in *VerifyTokenRequ
 	return out, nil
 }
 
-func (c *authServiceClient) GenerateAccessToken(ctx context.Context, in *GenerateAccessTokenRequest, opts ...grpc.CallOption) (*GenerateAccessTokenResponse, error) {
-	out := new(GenerateAccessTokenResponse)
-	err := c.cc.Invoke(ctx, "/settings.AuthService/GenerateAccessToken", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *authServiceClient) GenerateRefreshToken(ctx context.Context, in *GenerateRefreshTokenRequest, opts ...grpc.CallOption) (*GenerateRefreshTokenResponse, error) {
-	out := new(GenerateRefreshTokenResponse)
-	err := c.cc.Invoke(ctx, "/settings.AuthService/GenerateRefreshToken", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *authServiceClient) GenerateVisitorToken(ctx context.Context, in *GenerateVisitorTokenRequest, opts ...grpc.CallOption) (*GenerateVisitorTokenResponse, error) {
-	out := new(GenerateVisitorTokenResponse)
-	err := c.cc.Invoke(ctx, "/settings.AuthService/GenerateVisitorToken", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *authServiceClient) Signup(ctx context.Context, in *SignUpRequest, opts ...grpc.CallOption) (*SignUpResponse, error) {
 	out := new(SignUpResponse)
 	err := c.cc.Invoke(ctx, "/settings.AuthService/Signup", in, out, opts...)
@@ -87,9 +57,6 @@ func (c *authServiceClient) Signup(ctx context.Context, in *SignUpRequest, opts 
 // for forward compatibility
 type AuthServiceServer interface {
 	VerifyToken(context.Context, *VerifyTokenRequest) (*VerifyTokenResponse, error)
-	GenerateAccessToken(context.Context, *GenerateAccessTokenRequest) (*GenerateAccessTokenResponse, error)
-	GenerateRefreshToken(context.Context, *GenerateRefreshTokenRequest) (*GenerateRefreshTokenResponse, error)
-	GenerateVisitorToken(context.Context, *GenerateVisitorTokenRequest) (*GenerateVisitorTokenResponse, error)
 	Signup(context.Context, *SignUpRequest) (*SignUpResponse, error)
 	mustEmbedUnimplementedAuthServiceServer()
 }
@@ -100,15 +67,6 @@ type UnimplementedAuthServiceServer struct {
 
 func (UnimplementedAuthServiceServer) VerifyToken(context.Context, *VerifyTokenRequest) (*VerifyTokenResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method VerifyToken not implemented")
-}
-func (UnimplementedAuthServiceServer) GenerateAccessToken(context.Context, *GenerateAccessTokenRequest) (*GenerateAccessTokenResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GenerateAccessToken not implemented")
-}
-func (UnimplementedAuthServiceServer) GenerateRefreshToken(context.Context, *GenerateRefreshTokenRequest) (*GenerateRefreshTokenResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GenerateRefreshToken not implemented")
-}
-func (UnimplementedAuthServiceServer) GenerateVisitorToken(context.Context, *GenerateVisitorTokenRequest) (*GenerateVisitorTokenResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GenerateVisitorToken not implemented")
 }
 func (UnimplementedAuthServiceServer) Signup(context.Context, *SignUpRequest) (*SignUpResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Signup not implemented")
@@ -144,60 +102,6 @@ func _AuthService_VerifyToken_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthService_GenerateAccessToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GenerateAccessTokenRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AuthServiceServer).GenerateAccessToken(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/settings.AuthService/GenerateAccessToken",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServiceServer).GenerateAccessToken(ctx, req.(*GenerateAccessTokenRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _AuthService_GenerateRefreshToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GenerateRefreshTokenRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AuthServiceServer).GenerateRefreshToken(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/settings.AuthService/GenerateRefreshToken",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServiceServer).GenerateRefreshToken(ctx, req.(*GenerateRefreshTokenRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _AuthService_GenerateVisitorToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GenerateVisitorTokenRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AuthServiceServer).GenerateVisitorToken(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/settings.AuthService/GenerateVisitorToken",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServiceServer).GenerateVisitorToken(ctx, req.(*GenerateVisitorTokenRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _AuthService_Signup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SignUpRequest)
 	if err := dec(in); err != nil {
@@ -226,18 +130,6 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "VerifyToken",
 			Handler:    _AuthService_VerifyToken_Handler,
-		},
-		{
-			MethodName: "GenerateAccessToken",
-			Handler:    _AuthService_GenerateAccessToken_Handler,
-		},
-		{
-			MethodName: "GenerateRefreshToken",
-			Handler:    _AuthService_GenerateRefreshToken_Handler,
-		},
-		{
-			MethodName: "GenerateVisitorToken",
-			Handler:    _AuthService_GenerateVisitorToken_Handler,
 		},
 		{
 			MethodName: "Signup",

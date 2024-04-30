@@ -180,7 +180,6 @@ func (s *Server) StudentSignup(ctx context.Context, in *users.StudentSignupReque
 
 	res, err := s.AuthService.Signup(ctx, &auth.SignUpRequest{
 		AccountID: accountID.String(),
-		Email:     in.Email,
 	})
 
 	if err != nil {
@@ -193,14 +192,6 @@ func (s *Server) StudentSignup(ctx context.Context, in *users.StudentSignupReque
 			Token:     res.AccessToken.Token,
 			TokenType: res.AccessToken.TokenType,
 			ExpiresAt: res.AccessToken.ExpiresAt,
-		},
-		RefreshToken: &users.RefreshToken{
-			Token:     res.RefreshToken.Token,
-			ExpiresAt: res.RefreshToken.ExpiresAt,
-		},
-		SignupToken: &users.SignupToken{
-			Token:     res.SignupToken.Token,
-			ExpiresAt: res.SignupToken.ExpiresAt,
 		},
 	}, nil
 }

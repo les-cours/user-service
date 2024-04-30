@@ -11,64 +11,29 @@ message VerifyTokenResponse {
     bool authorized = 1;
 }
 
-message GenerateAccessTokenRequest {
-    string accountID = 1;
-}
-
-message GenerateAccessTokenResponse {
-    AuthToken token = 1;
-}
-
-message GenerateRefreshTokenRequest {
-    string accountID = 1;
-}
-
-message GenerateRefreshTokenResponse {
-    AuthToken token = 1;
-}
-
-
-message GenerateVisitorTokenRequest {
-    string accountID = 1;
-    string visitorID = 2;
-}
-
-message GenerateVisitorTokenResponse {
-    AuthToken token = 1;
-}
-
 message AuthToken {
     string token = 1;
     int64 expiresAt = 2;
     string tokenType = 3;
 }
 
+
 message SignUpRequest {
     string accountID = 1;
-    string email = 2;
+    string userRole = 2;
 }
 
-
-message RefreshToken {
-    string token = 1;
-    int64 expiresAt = 2;
-}
 message SignupToken {
     string token = 1;
     int64 expiresAt = 2;
 }
 
-
 message SignUpResponse {
     AuthToken accessToken = 2;
-    RefreshToken refreshToken = 3;
-    SignupToken signupToken = 4;
 }
+
 
 service AuthService {
     rpc VerifyToken (VerifyTokenRequest) returns (VerifyTokenResponse) {}
-    rpc GenerateAccessToken (GenerateAccessTokenRequest) returns (GenerateAccessTokenResponse) {}
-    rpc GenerateRefreshToken (GenerateRefreshTokenRequest) returns (GenerateRefreshTokenResponse) {}
-    rpc GenerateVisitorToken (GenerateVisitorTokenRequest) returns (GenerateVisitorTokenResponse) {}
     rpc Signup(SignUpRequest) returns (SignUpResponse) {}
 }

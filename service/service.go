@@ -1,7 +1,7 @@
 package service
 
 import (
-	"github.com/sendgrid/sendgrid-go"
+	"github.com/les-cours/user-service/api/learning"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"net"
@@ -97,12 +97,17 @@ func Start() {
 	defer authConnectionService.Close()
 	authServiceClient := auth.NewAuthServiceClient(authConnectionService)
 
-	var sendgridClient = sendgrid.NewSendClient(env.Settings.Noreply.APIKey)
+	learningConnectionService, err := grpc.Dial(env.Settings.LearningService.Host+":"+env.Settings.LearningService.Port, grpc.WithInsecure())
+	if err != nil {
+		logger.Error(err.Error())
+	}
+	defer learningConnectionService.Close()
+	learningServiceClient := learning.NewLearningServiceClient(learningConnectionService)
 
 	var s = resolvers.GetInstance(
 		db,
 		authServiceClient,
-		sendgridClient,
+		learningServiceClient,
 		logger,
 	)
 

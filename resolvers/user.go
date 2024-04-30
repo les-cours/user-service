@@ -9,100 +9,36 @@ import (
 	"golang.org/x/net/context"
 )
 
-func (s *Server) GetUser(ctx context.Context, user *users.GetUserRequest) (*users.User, error) {
-	log.Println("Get User Started ...")
-	var (
-		accountID,
-		username,
-		firstname,
-		lastname,
-		email,
-		avatar,
-		userType,
-		accountStatus,
-		planID string
-		err error
-	)
+func (s *Server) GetUser(ctx context.Context, in *users.GetUserRequest) (*users.User, error) {
 
-	//if user.IsTeacher {
-	//	//change query to teacher
-	//}
+	var accountID string
 
-	err = s.DB.QueryRow(`SELECT account_id FROM accounts WHERE email = $1 AND password = crypt($2,password)`,
-		user.GetUsername(),
-		user.GetPassword(),
+	err := s.DB.QueryRow(`SELECT account_id FROM accounts WHERE email = $1 AND password = crypt($2,password)`,
+		in.GetUsername(),
+		in.GetPassword(),
 	).Scan(&accountID)
 
 	if err != nil {
+		s.Logger.Error(err.Error())
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, Err("wrong password or email")
 		}
 		return nil, err
 	}
 
-	//AccountStatus AccountStatus `json:"account"`
-	//Permissions   Permissions   `json:"permissions"`
-
-	err = s.DB.QueryRow(
-		`
-		SELECT 
-		 accounts.username, accounts.email, students.firstname, students.lastname,  students.avatar , accounts.status, accounts.plan_id,accounts.user_type
-		FROM 
-		students
-		INNER JOIN accounts ON accounts.account_id = students.student_id
-		WHERE
-	 	(accounts.account_id = $1)
-		`, &accountID).Scan(
-		&username,
-		&email,
-		&firstname,
-		&lastname,
-		&avatar,
-		&accountStatus,
-		&planID,
-		&userType)
-	if err != nil {
-		log.Printf("Failed to scan user: %v", err)
-		return nil, err
+	var role = "student"
+	if in.IsTeacher {
+		role = "teacher"
 	}
-
-	//get permision
-	var writeComment, live, settings bool
-	err = s.DB.QueryRow(`
-	SELECT write_comment,live,settings FROM permissions
-	WHERE account_id = $1;
-	`, &accountID).Scan(&writeComment, &live, &settings)
-	if err != nil {
-		log.Printf("Failed to scan permissions: %v", err)
-		return nil, err
-	}
-
-	//get plan (TO DO  )
-	//ADD TABLE SUBSCRIPTION AND GET PLAN INFORMATION
-
-	return &users.User{
-		Id:        accountID,
+	user, err := s.GetUserByID(ctx, &users.GetUserByIDRequest{
 		AccountID: accountID,
-		Username:  username,
-		FirstName: firstname,
-		LastName:  lastname,
-		Email:     email,
-		Plan: &users.Plan{
-			PlanID:      planID,
-			Name:        "PLAN NAME HERE",
-			PeriodEndAt: 0,
-			Active:      false,
-			Require:     "",
-		},
-		Avatar: avatar,
-		Permissions: &users.Permissions{
-			WriteComment: writeComment,
-			Live:         live,
-			Settings:     settings,
-			AccountID:    accountID,
-		},
-		UserType: userType,
-	}, nil
+		UserRole:  role,
+	})
+	if err != nil {
+		s.Logger.Error(err.Error())
+		return nil, ErrInternal
+	}
+	return user, nil
 }
 
 func (s *Server) GetUserByID(ctx context.Context, user *users.GetUserByIDRequest) (*users.User, error) {
@@ -113,20 +49,67 @@ func (s *Server) GetUserByID(ctx context.Context, user *users.GetUserByIDRequest
 		email,
 		avatar,
 		userType,
-		accountStatus,
-		planID string
+		accountStatus string
 		err error
 	)
+	if user.UserRole == "teacher" {
 
-	//if user.IsTeacher {
-	//	//change query to teacher
-	//}
+		err = s.DB.QueryRow(
+			`
+		SELECT 
+		accounts.username, accounts.email, teachers.firstname, teachers.lastname,  teachers.avatar , accounts.status, accounts.user_type
+		FROM 
+		teachers
+		INNER JOIN accounts ON accounts.account_id =teachers.teacher_id
+		WHERE
+	 	(accounts.account_id = $1)
+		`, &user.AccountID).Scan(
+			&username,
+			&email,
+			&firstname,
+			&lastname,
+			&avatar,
+			&accountStatus,
+			&userType)
+		if err != nil {
+			s.Logger.Error(err.Error())
+			return nil, err
+		}
 
-	log.Println("id : ", user.AccountID)
+		var writeComment, live, upload bool
+		err = s.DB.QueryRow(`
+	SELECT write_comment,live,upload FROM permissions
+	WHERE account_id = $1;
+	`, &user.AccountID).Scan(&writeComment, &live, &upload)
+		if err != nil {
+			return nil, err
+		}
+
+		//get plan (TO DO  )
+		//ADD TABLE SUBSCRIPTION AND GET PLAN INFORMATION
+
+		return &users.User{
+			Id:        user.AccountID,
+			AccountID: user.AccountID,
+			Username:  username,
+			FirstName: firstname,
+			LastName:  lastname,
+			Email:     email,
+			Avatar:    avatar,
+			UserType:  userType,
+			Permissions: &users.Permissions{
+				WriteComment: writeComment,
+				Live:         live,
+				Upload:       upload,
+			},
+		}, nil
+	}
+
+	//student ...
 	err = s.DB.QueryRow(
 		`
 		SELECT 
-		accounts.username, accounts.email, students.firstname, students.lastname,  students.avatar , accounts.status, accounts.plan_id,accounts.user_type
+		accounts.username, accounts.email, students.firstname, students.lastname,  students.avatar , accounts.status,accounts.user_type
 		FROM 
 		students
 		INNER JOIN accounts ON accounts.account_id = students.student_id
@@ -139,7 +122,6 @@ func (s *Server) GetUserByID(ctx context.Context, user *users.GetUserByIDRequest
 		&lastname,
 		&avatar,
 		&accountStatus,
-		&planID,
 		&userType)
 	if err != nil {
 		log.Println("err SELECT students", err)
@@ -147,16 +129,6 @@ func (s *Server) GetUserByID(ctx context.Context, user *users.GetUserByIDRequest
 
 			return nil, ErrInvalidInput("id", "doesn't exist")
 		}
-		return nil, err
-	}
-
-	//get permision
-	var writeComment, live, settings bool
-	err = s.DB.QueryRow(`
-	SELECT write_comment,live,settings FROM permissions
-	WHERE account_id = $1;
-	`, &user.AccountID).Scan(&writeComment, &live, &settings)
-	if err != nil {
 		return nil, err
 	}
 
@@ -170,19 +142,7 @@ func (s *Server) GetUserByID(ctx context.Context, user *users.GetUserByIDRequest
 		FirstName: firstname,
 		LastName:  lastname,
 		Email:     email,
-		Plan: &users.Plan{
-			PlanID:      planID,
-			Name:        "PLAN NAME HERE",
-			PeriodEndAt: 0,
-			Active:      false,
-			Require:     "",
-		},
-		Avatar: avatar,
-		Permissions: &users.Permissions{
-			WriteComment: writeComment,
-			Live:         live,
-			Settings:     settings,
-			AccountID:    user.AccountID,
-		},
+		Avatar:    avatar,
+		UserType:  userType,
 	}, nil
 }

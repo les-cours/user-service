@@ -22,7 +22,7 @@ func NewRequest(to []string, subject string) *Request {
 	auth = smtp.PlainAuth("", "chouaib.chouache@univ-constantine2.dz", "put your password here", "smtp.gmail.com")
 
 	return &Request{
-		from:    env.Settings.Noreply.Email,
+		from:    env.Settings.NoreplyEmail,
 		to:      to,
 		subject: subject,
 	}
