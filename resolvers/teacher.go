@@ -98,10 +98,16 @@ func (s *Server) TeacherSignup(ctx context.Context, in *users.TeacherSignupReque
 		return nil, ErrInternal
 	}
 
+	avatar, err := utils.GenerateAvatar(in.Firstname, in.Lastname)
+	if err != nil {
+		s.Logger.Error(err.Error())
+		return nil, ErrInternal
+	}
+
 	_, err = tx.Exec(`INSERT INTO 
     teachers 
-    (teacher_id, firstname, lastname) 
-VALUES ($1,$2,$3)`, in.TeacherID, in.Firstname, in.Lastname)
+    (teacher_id, firstname, lastname,avatar) 
+VALUES ($1,$2,$3)`, in.TeacherID, in.Firstname, in.Lastname, avatar)
 	if err != nil {
 		s.Logger.Error(err.Error())
 		tx.Rollback()
@@ -127,6 +133,41 @@ VALUES ($1,$2,$3)`, in.TeacherID, in.Firstname, in.Lastname)
 	/*
 		Permission
 	*/
+	_, err = tx.Exec(`
+INSERT INTO permissions (
+    account_id,
+    orgs_create,
+    orgs_update,
+    orgs_delete,
+    orgs_read,
+    users_create,
+    users_update,
+    users_delete,
+    users_read,
+    learning_create,
+    learning_update,
+    learning_delete,
+    learning_read
+) VALUES (
+    $1, -- Replace 'account1' with the actual account ID
+    false,       -- Example values for orgs_create
+    false,      -- Example values for orgs_update
+    false,      -- Example values for orgs_delete
+    false,       -- Example values for orgs_read
+    false,       -- Example values for users_create
+    false,       -- Example values for users_update
+    false,       -- Example values for users_delete
+    false,      -- Example values for users_read
+    true,       -- Example values for learning_create
+    true,      -- Example values for learning_update
+    true,      -- Example values for learning_delete
+    true        -- Example values for learning_read
+);`, in.TeacherID)
+	if err != nil {
+		s.Logger.Error(err.Error())
+		tx.Rollback()
+		return nil, ErrInternal
+	}
 
 	/*
 		Commit
@@ -137,12 +178,22 @@ VALUES ($1,$2,$3)`, in.TeacherID, in.Firstname, in.Lastname)
 		return nil, ErrInternal
 	}
 
+	/*
+		DELETE INVITATION
+	*/
+
+	_, err = s.DB.Exec(`DELETE FROM teachers_invitations where teacher_id = $1;`, in.TeacherID)
+	if err != nil {
+		s.Logger.Error(err.Error())
+	}
+
 	res, err := s.AuthService.Signup(ctx, &auth.SignUpRequest{
 		AccountID: in.TeacherID,
 		UserRole:  "teacher",
 	})
 
 	if err != nil {
+		s.Logger.Error(err.Error())
 		return nil, ErrInternal
 	}
 

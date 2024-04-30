@@ -76,17 +76,34 @@ func (s *Server) GetUserByID(ctx context.Context, user *users.GetUserByIDRequest
 			return nil, err
 		}
 
-		var writeComment, live, upload bool
-		err = s.DB.QueryRow(`
-	SELECT write_comment,live,upload FROM permissions
-	WHERE account_id = $1;
-	`, &user.AccountID).Scan(&writeComment, &live, &upload)
-		if err != nil {
-			return nil, err
-		}
+		var orgsCreate, orgsUpdate, orgsDelete, orgsRead bool
+		var usersCreate, usersUpdate, usersDelete, usersRead bool
+		var learningCreate, learningUpdate, learningDelete, learningRead bool
 
-		//get plan (TO DO  )
-		//ADD TABLE SUBSCRIPTION AND GET PLAN INFORMATION
+		err = s.DB.QueryRow(`SELECT  orgs_create, orgs_update, orgs_delete, orgs_read,
+               users_create, users_update, users_delete, users_read,
+               learning_create, learning_update, learning_delete, learning_read
+        FROM permissions
+	WHERE account_id = $1;
+	`, &user.AccountID).Scan(
+			&orgsCreate,
+			&orgsUpdate,
+			&orgsDelete,
+			&orgsRead,
+			&usersCreate,
+			&usersUpdate,
+			&usersDelete,
+			&usersRead,
+			&learningCreate,
+			&learningUpdate,
+			&learningDelete,
+			&learningRead,
+		)
+
+		if err != nil {
+			s.Logger.Error(err.Error())
+			return nil, ErrInternal
+		}
 
 		return &users.User{
 			Id:        user.AccountID,
@@ -97,10 +114,25 @@ func (s *Server) GetUserByID(ctx context.Context, user *users.GetUserByIDRequest
 			Email:     email,
 			Avatar:    avatar,
 			UserType:  userType,
-			Permissions: &users.Permissions{
-				WriteComment: writeComment,
-				Live:         live,
-				Upload:       upload,
+			CREATE: &users.Permissions{
+				Orgs:     orgsCreate,
+				Learning: learningCreate,
+				Users:    usersCreate,
+			},
+			READ: &users.Permissions{
+				Orgs:     orgsRead,
+				Learning: learningRead,
+				Users:    usersRead,
+			},
+			UPDATE: &users.Permissions{
+				Orgs:     orgsUpdate,
+				Learning: learningUpdate,
+				Users:    usersUpdate,
+			},
+			DELETE: &users.Permissions{
+				Orgs:     orgsDelete,
+				Learning: learningDelete,
+				Users:    usersDelete,
 			},
 		}, nil
 	}
