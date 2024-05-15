@@ -126,7 +126,7 @@ func (s *Server) StudentSignup(ctx context.Context, in *users.StudentSignupReque
 	code := utils.GenerateConfirmationCode()
 
 	//save them in confirmation_table
-	expiresAt := time.Now().Add(time.Minute * 60).Unix()
+	expiresAt := time.Now().Add(time.Minute * 60)
 	_, err = tx.Exec(`INSERT INTO email_confirmation (account_id,code,expires_at) values ($1,$2,$3)`, accountID, code, expiresAt)
 	if err != nil {
 		s.Logger.Error(err.Error())
