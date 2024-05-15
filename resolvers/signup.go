@@ -183,18 +183,20 @@ func (s *Server) StudentSignup(ctx context.Context, in *users.StudentSignupReque
 }
 
 func (s *Server) EmailConfirmation(ctx context.Context, in *users.EmailConfirmationRequest) (*users.OperationStatus, error) {
-	var code, expiresAt int64
+	var code int64
+	var expiresAt time.Time
 	err := s.DB.QueryRow(`SELECT code, expires_at FROM email_confirmation WHERE account_id = $1 LIMIT 1;`, in.AccountID).Scan(
 		&code, &expiresAt,
 	)
 	if err != nil {
+		s.Logger.Error(err.Error())
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNotFound("student")
 		}
 		return nil, ErrInternal
 	}
 
-	if expiresAt-time.Now().Unix() < 0 {
+	if expiresAt.Sub(time.Now()).Minutes() < 0 {
 		return nil, ErrInvalidInput("code", "expires")
 	}
 
@@ -204,10 +206,12 @@ func (s *Server) EmailConfirmation(ctx context.Context, in *users.EmailConfirmat
 
 	_, err = s.DB.Exec(`UPDATE accounts SET status = 'active' WHERE  account_id = $1;`, in.AccountID)
 	if err != nil {
+		s.Logger.Error(err.Error())
 		return nil, ErrInternal
 	}
 	_, err = s.DB.Exec(`DELETE FROM email_confirmation WHERE account_id = $1;`, in.AccountID)
 	if err != nil {
+		s.Logger.Error(err.Error())
 		return nil, ErrInternal
 	}
 
