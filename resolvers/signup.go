@@ -103,7 +103,7 @@ func (s *Server) StudentSignup(ctx context.Context, in *users.StudentSignupReque
 		`
 		INSERT INTO 
 		students
-		(student_id, firstname, lastname,default_avatar,grade_id,date_of_birth,gender,city_id)
+		(student_id, firstname, lastname,avatar,grade_id,date_of_birth,gender,city_id)
 		VALUES($1, $2, $3, $4, $5,$6,$7,$8);
 		`,
 		accountID,
