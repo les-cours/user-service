@@ -10,6 +10,7 @@ import (
 	"github.com/les-cours/user-service/env"
 	"github.com/les-cours/user-service/utils"
 	"strings"
+	"time"
 )
 
 func (s *Server) InviteTeacher(ctx context.Context, in *users.InviteTeacherRequest) (*users.OperationStatus, error) {
@@ -202,28 +203,69 @@ INSERT INTO permissions (
 	}, nil
 }
 
-func (s *Server) GetTeachersBySubject(ctx context.Context, in *users.GetTeacherBySubjectRequest) ([]*users.Teacher, error) {
+func (s *Server) UpdateTeacher(ctx context.Context, in *users.UpdateTeacherRequest) (*users.Teacher, error) {
 
-	rows, err := s.DB.Query(`
-SELECT 
-    t.teacher_id,t.firstname,t.lastname
-FROM teachers as t
-    INNER JOIN 
-    public.grades_subjects gs 
-        on t.teacher_id = gs.grade_id
-WHERE gs.subject_id = $1;
-        `, in.SubjectID)
+	_, err := s.DB.Exec(` UPDATE teachers
+        SET city_id = $2,
+            firstname = $3,
+            lastname = $4,
+            gender = $5,
+            date_of_birth = $6,
+            description = $7,
+            avatar = $8
+        WHERE teacher_id = $1`, in.TeacherID, in.CityID, in.Firstname, in.Lastname, in.Gender, in.DateOfBirth, in.Description, in.Avatar)
 
-	var teacher *users.Teacher
-	var teachers []*users.Teacher
-	for rows.Next() {
-		err = rows.Scan(&teacher.TeacherID, &teacher.Firstname, &teacher.Lastname)
-		if err != nil {
-			s.Logger.Error(err.Error())
-			return nil, err
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNotFound("teacher")
 		}
-		teachers = append(teachers, teacher)
+		return nil, err
 	}
 
-	return teachers, nil
+	return &users.Teacher{
+		TeacherID:   in.TeacherID,
+		CityID:      in.CityID,
+		Firstname:   in.Firstname,
+		Lastname:    in.Lastname,
+		Gender:      in.Gender,
+		DateOfBirth: in.DateOfBirth,
+		Description: in.Description,
+		Avatar:      in.Avatar,
+	}, nil
+}
+
+func (s *Server) DeleteTeacher(ctx context.Context, in *users.IDRequest) (*users.OperationStatus, error) {
+	tx, err := s.DB.BeginTx(ctx, nil)
+	if err != nil {
+		s.Logger.Error(err.Error())
+		tx.Rollback()
+		return nil, ErrInternal
+	}
+	_, err = tx.Exec(`UPDATE  teachers SET deleted_at = $2 WHERE teacher_id = $1`, in.Id, time.Now().Unix())
+	if err != nil {
+		s.Logger.Error(err.Error())
+		tx.Rollback()
+		return nil, ErrInternal
+	}
+
+	//then set all his/her classRoom ==> disable
+	_, err = s.LearningService.DeleteClassRoomsByTeacher(ctx, &learning.IDRequest{
+		Id: in.Id,
+	})
+	if err != nil {
+		s.Logger.Error(err.Error())
+		tx.Rollback()
+		return nil, ErrInternal
+	}
+
+	err = tx.Commit()
+
+	if err != nil {
+		s.Logger.Error(err.Error())
+		return nil, ErrInternal
+	}
+
+	return &users.OperationStatus{
+		Completed: true,
+	}, nil
 }

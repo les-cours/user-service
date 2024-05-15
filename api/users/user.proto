@@ -4,6 +4,9 @@ package users;
 
 message Empty {}
 
+message IDRequest {
+    string id = 1;
+}
 
 /*
     STUDENTS
@@ -38,7 +41,7 @@ message MultiStudentsDeleteRequest{
     repeated string studentIDs = 1;
 }
 message Student {
-    string student_id = 2;
+    string studentID = 2;
     string username = 3;
     string firstname = 5;
     string lastname = 6;
@@ -49,7 +52,7 @@ message Student {
     bool notificationStatus = 11;
     bool onlineStatus = 12;
     string defaultAvatar = 13;
-    string city_id = 14;
+    string cityID = 14;
 }
 message UpdateStudentStatusResponse {
     string studentID = 1;
@@ -168,11 +171,15 @@ message UserDetails{
 
 
 message Teacher {
-    string teacherID = 2;
-    string username = 3;
-    string firstname = 5;
-    string lastname = 6;
-    string email = 7;
+    string teacherID = 1;
+    int32 cityID = 2;
+    string firstname = 3;
+    string lastname = 4;
+    string gender = 5;
+    string date_of_birth = 6;
+    string description = 7;
+    string avatar = 8;
+    string email = 9;
 }
 message  Teachers {
     repeated Teacher teachers =1;
@@ -186,7 +193,20 @@ message TeacherSignupRequest {
     string dob = 5;
     string gender = 6;
     int32 cityID =7;
+    string description = 8;
 }
+message UpdateTeacherRequest {
+    string teacherID = 1;
+    int32 cityID = 2;
+    string firstname = 3;
+    string lastname = 4;
+    string gender = 5;
+    string date_of_birth = 6;
+    string description = 7;
+    string avatar = 8;
+}
+
+
 message TeacherSignupResponse{
     string token = 1;
 }
@@ -196,9 +216,7 @@ message InviteTeacherRequest {
     repeated  string subjects = 2;
 }
 
-message GetTeacherBySubjectRequest{
-    string subjectID = 1;
-}
+
 message OperationStatus {
     bool completed = 1;
 }
@@ -259,8 +277,8 @@ service UserService {
 
     rpc InviteTeacher(InviteTeacherRequest) returns (OperationStatus) {}
     rpc TeacherSignup(TeacherSignupRequest) returns (TeacherSignupResponse) {}
-    rpc GetTeacherBySubject(GetTeacherBySubjectRequest) returns (Teachers) {}
-
+    rpc UpdateTeacher(UpdateTeacherRequest) returns (Teacher) {}
+    rpc GetTeacher(IDRequest) returns (Teacher) {}
     /*
          USER
      */

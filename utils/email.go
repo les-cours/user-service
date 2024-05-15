@@ -19,7 +19,7 @@ type Request struct {
 }
 
 func NewRequest(to []string, subject string) *Request {
-	auth = smtp.PlainAuth("", "chouaib.chouache@univ-constantine2.dz", "put your password here", "smtp.gmail.com")
+	auth = smtp.PlainAuth("", "chouaib.chouache@univ-constantine2.dz", "s3yN5Ffz6MkCod", "smtp.gmail.com")
 
 	return &Request{
 		from:    env.Settings.NoreplyEmail,

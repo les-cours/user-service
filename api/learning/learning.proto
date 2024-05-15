@@ -2,6 +2,11 @@ syntax = "proto3";
 option go_package = "github.com/les-cours/learning-service/api/learning";
 package learning;
 
+
+message IDRequest {
+  string id = 1;
+}
+
 message CreateClassRoomsRequest {
   string teacherID = 1;
   repeated string subjectIDs = 2;
@@ -13,4 +18,5 @@ message OperationStatus {
 
 service LearningService {
   rpc CreateClassRooms(CreateClassRoomsRequest)returns (OperationStatus){}
+  rpc DeleteClassRoomsByTeacher(IDRequest)returns (OperationStatus){}
 }

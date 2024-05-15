@@ -32,7 +32,7 @@ func (s *Server) GetStudents(ctx context.Context, in *users.GetStudentsRequest) 
 	student := &users.Student{}
 
 	for rows.Next() {
-		err = rows.Scan(&student.StudentId, &student.Firstname, &student.Lastname, &student.Username, &student.DateOfBirth, &student.Gender, &student.Status, &student.Avatar, &student.NotificationStatus, &student.OnlineStatus, &student.DefaultAvatar, &student.CityId)
+		err = rows.Scan(&student.StudentID, &student.Firstname, &student.Lastname, &student.Username, &student.DateOfBirth, &student.Gender, &student.Status, &student.Avatar, &student.NotificationStatus, &student.OnlineStatus, &student.DefaultAvatar, &student.CityID)
 		if err != nil {
 			s.Logger.Error(err.Error())
 			return nil, ErrInternal
@@ -51,7 +51,7 @@ func (s *Server) GetStudent(ctx context.Context, in *users.GetStudentRequest) (*
 select 
     firstname,lastname,a.username,gender,a.status,avatar,notification_status,online_status,default_avatar,city_id,date_of_birth
     from  
-        students inner join accounts a on a.account_id = students.student_id where student_id = $1;`, in.StudentID).Scan(&student.Firstname, &student.Lastname, &student.Username, &student.Gender, &student.Status, &student.Avatar, &student.NotificationStatus, &student.OnlineStatus, &student.DefaultAvatar, &student.CityId, &student.DateOfBirth)
+        students inner join accounts a on a.account_id = students.student_id where student_id = $1;`, in.StudentID).Scan(&student.Firstname, &student.Lastname, &student.Username, &student.Gender, &student.Status, &student.Avatar, &student.NotificationStatus, &student.OnlineStatus, &student.DefaultAvatar, &student.CityID, &student.DateOfBirth)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -60,7 +60,7 @@ select
 		s.Logger.Error(err.Error())
 		return nil, ErrInternal
 	}
-	student.StudentId = in.StudentID
+	student.StudentID = in.StudentID
 	return student, nil
 }
 

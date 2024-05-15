@@ -33,7 +33,8 @@ type UserServiceClient interface {
 	EmailConfirmation(ctx context.Context, in *EmailConfirmationRequest, opts ...grpc.CallOption) (*OperationStatus, error)
 	InviteTeacher(ctx context.Context, in *InviteTeacherRequest, opts ...grpc.CallOption) (*OperationStatus, error)
 	TeacherSignup(ctx context.Context, in *TeacherSignupRequest, opts ...grpc.CallOption) (*TeacherSignupResponse, error)
-	GetTeacherBySubject(ctx context.Context, in *GetTeacherBySubjectRequest, opts ...grpc.CallOption) (*Teachers, error)
+	UpdateTeacher(ctx context.Context, in *UpdateTeacherRequest, opts ...grpc.CallOption) (*Teacher, error)
+	GetTeacher(ctx context.Context, in *IDRequest, opts ...grpc.CallOption) (*Teacher, error)
 	GetUser(ctx context.Context, in *GetUserRequest, opts ...grpc.CallOption) (*User, error)
 	GetUserByID(ctx context.Context, in *GetUserByIDRequest, opts ...grpc.CallOption) (*User, error)
 	ResetPassword(ctx context.Context, in *ResetPasswordRequest, opts ...grpc.CallOption) (*ResetPasswordResponse, error)
@@ -152,9 +153,18 @@ func (c *userServiceClient) TeacherSignup(ctx context.Context, in *TeacherSignup
 	return out, nil
 }
 
-func (c *userServiceClient) GetTeacherBySubject(ctx context.Context, in *GetTeacherBySubjectRequest, opts ...grpc.CallOption) (*Teachers, error) {
-	out := new(Teachers)
-	err := c.cc.Invoke(ctx, "/users.UserService/GetTeacherBySubject", in, out, opts...)
+func (c *userServiceClient) UpdateTeacher(ctx context.Context, in *UpdateTeacherRequest, opts ...grpc.CallOption) (*Teacher, error) {
+	out := new(Teacher)
+	err := c.cc.Invoke(ctx, "/users.UserService/UpdateTeacher", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) GetTeacher(ctx context.Context, in *IDRequest, opts ...grpc.CallOption) (*Teacher, error) {
+	out := new(Teacher)
+	err := c.cc.Invoke(ctx, "/users.UserService/GetTeacher", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -257,7 +267,8 @@ type UserServiceServer interface {
 	EmailConfirmation(context.Context, *EmailConfirmationRequest) (*OperationStatus, error)
 	InviteTeacher(context.Context, *InviteTeacherRequest) (*OperationStatus, error)
 	TeacherSignup(context.Context, *TeacherSignupRequest) (*TeacherSignupResponse, error)
-	GetTeacherBySubject(context.Context, *GetTeacherBySubjectRequest) (*Teachers, error)
+	UpdateTeacher(context.Context, *UpdateTeacherRequest) (*Teacher, error)
+	GetTeacher(context.Context, *IDRequest) (*Teacher, error)
 	GetUser(context.Context, *GetUserRequest) (*User, error)
 	GetUserByID(context.Context, *GetUserByIDRequest) (*User, error)
 	ResetPassword(context.Context, *ResetPasswordRequest) (*ResetPasswordResponse, error)
@@ -307,8 +318,11 @@ func (UnimplementedUserServiceServer) InviteTeacher(context.Context, *InviteTeac
 func (UnimplementedUserServiceServer) TeacherSignup(context.Context, *TeacherSignupRequest) (*TeacherSignupResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method TeacherSignup not implemented")
 }
-func (UnimplementedUserServiceServer) GetTeacherBySubject(context.Context, *GetTeacherBySubjectRequest) (*Teachers, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetTeacherBySubject not implemented")
+func (UnimplementedUserServiceServer) UpdateTeacher(context.Context, *UpdateTeacherRequest) (*Teacher, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateTeacher not implemented")
+}
+func (UnimplementedUserServiceServer) GetTeacher(context.Context, *IDRequest) (*Teacher, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTeacher not implemented")
 }
 func (UnimplementedUserServiceServer) GetUser(context.Context, *GetUserRequest) (*User, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUser not implemented")
@@ -548,20 +562,38 @@ func _UserService_TeacherSignup_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
-func _UserService_GetTeacherBySubject_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetTeacherBySubjectRequest)
+func _UserService_UpdateTeacher_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateTeacherRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(UserServiceServer).GetTeacherBySubject(ctx, in)
+		return srv.(UserServiceServer).UpdateTeacher(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/users.UserService/GetTeacherBySubject",
+		FullMethod: "/users.UserService/UpdateTeacher",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UserServiceServer).GetTeacherBySubject(ctx, req.(*GetTeacherBySubjectRequest))
+		return srv.(UserServiceServer).UpdateTeacher(ctx, req.(*UpdateTeacherRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_GetTeacher_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(IDRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).GetTeacher(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/users.UserService/GetTeacher",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).GetTeacher(ctx, req.(*IDRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -780,8 +812,12 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _UserService_TeacherSignup_Handler,
 		},
 		{
-			MethodName: "GetTeacherBySubject",
-			Handler:    _UserService_GetTeacherBySubject_Handler,
+			MethodName: "UpdateTeacher",
+			Handler:    _UserService_UpdateTeacher_Handler,
+		},
+		{
+			MethodName: "GetTeacher",
+			Handler:    _UserService_GetTeacher_Handler,
 		},
 		{
 			MethodName: "GetUser",

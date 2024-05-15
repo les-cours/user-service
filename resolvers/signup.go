@@ -86,23 +86,9 @@ func (s *Server) StudentSignup(ctx context.Context, in *users.StudentSignupReque
 	var userName = in.GetFirstname() + "_" + in.GetLastname()
 	_, err = tx.ExecContext(context.Background(),
 		`INSERT INTO accounts 
-		(account_id,email,password,username, status, user_type,plan_id) VALUES($1, $2,crypt($3,gen_salt('bf')),$4,$5,$6,$7);`,
-		accountID, in.GetEmail(), in.GetPassword(), userName, "inactive", "student", "PLAN_free")
+		(account_id,email,password,username, status, user_type) VALUES($1, $2,crypt($3,gen_salt('bf')),$4,$5,$6);`,
+		accountID, in.GetEmail(), in.GetPassword(), userName, "inactive", "student")
 
-	if err != nil {
-		s.Logger.Error(err.Error())
-		tx.Rollback()
-		return nil, ErrInternal
-	}
-
-	_, err = tx.ExecContext(context.Background(),
-		`
-		INSERT INTO
-		permissions (account_id,live,write_comment,settings)
-		VALUES
-			($1,FALSE, FALSE, FALSE)
-		
-		`, &accountID)
 	if err != nil {
 		s.Logger.Error(err.Error())
 		tx.Rollback()
