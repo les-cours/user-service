@@ -51,8 +51,7 @@ message Student {
     string avatar = 10;
     bool notificationStatus = 11;
     bool onlineStatus = 12;
-    string defaultAvatar = 13;
-    string cityID = 14;
+    string cityID = 13;
 }
 message UpdateStudentStatusResponse {
     string studentID = 1;

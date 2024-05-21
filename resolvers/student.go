@@ -32,7 +32,7 @@ func (s *Server) GetStudents(ctx context.Context, in *users.GetStudentsRequest) 
 	student := &users.Student{}
 
 	for rows.Next() {
-		err = rows.Scan(&student.StudentID, &student.Firstname, &student.Lastname, &student.Username, &student.DateOfBirth, &student.Gender, &student.Status, &student.Avatar, &student.NotificationStatus, &student.OnlineStatus, &student.DefaultAvatar, &student.CityID)
+		err = rows.Scan(&student.StudentID, &student.Firstname, &student.Lastname, &student.Username, &student.DateOfBirth, &student.Gender, &student.Status, &student.Avatar, &student.NotificationStatus, &student.OnlineStatus, &student.CityID)
 		if err != nil {
 			s.Logger.Error(err.Error())
 			return nil, ErrInternal
@@ -49,9 +49,9 @@ func (s *Server) GetStudent(ctx context.Context, in *users.GetStudentRequest) (*
 
 	err := s.DB.QueryRow(`
 select 
-    firstname,lastname,a.username,gender,a.status,avatar,notification_status,online_status,default_avatar,city_id,date_of_birth
+    firstname,lastname,a.username,gender,a.status,avatar,notification_status,online_status,,city_id,date_of_birth
     from  
-        students inner join accounts a on a.account_id = students.student_id where student_id = $1;`, in.StudentID).Scan(&student.Firstname, &student.Lastname, &student.Username, &student.Gender, &student.Status, &student.Avatar, &student.NotificationStatus, &student.OnlineStatus, &student.DefaultAvatar, &student.CityID, &student.DateOfBirth)
+        students inner join accounts a on a.account_id = students.student_id where student_id = $1;`, in.StudentID).Scan(&student.Firstname, &student.Lastname, &student.Username, &student.Gender, &student.Status, &student.Avatar, &student.NotificationStatus, &student.OnlineStatus, &student.CityID, &student.DateOfBirth)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -65,7 +65,7 @@ select
 }
 
 const Query = `select 
-   student_id,firstname,lastname,a.username,date_of_birth,gender,a.status,avatar,notification_status,online_status,default_avatar,city_id
+   student_id,firstname,lastname,a.username,date_of_birth,gender,a.status,avatar,notification_status,online_status,city_id
     from  
         students inner join public.accounts a on a.account_id = students.student_id`
 
