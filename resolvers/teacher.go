@@ -108,26 +108,10 @@ func (s *Server) TeacherSignup(ctx context.Context, in *users.TeacherSignupReque
 	_, err = tx.Exec(`INSERT INTO 
     teachers 
     (teacher_id, firstname, lastname,avatar) 
-VALUES ($1,$2,$3)`, in.TeacherID, in.Firstname, in.Lastname, avatar)
+VALUES ($1,$2,$3,$4)`, in.TeacherID, in.Firstname, in.Lastname, avatar)
 	if err != nil {
 		s.Logger.Error(err.Error())
 		tx.Rollback()
-		return nil, ErrInternal
-	}
-
-	/*
-		GENERATE CLASSROOMS FOR HER/HIS SUBJECTS ...
-	*/
-
-	subjects := strings.Split(subjectsString, ",")
-	_, err = s.LearningService.CreateClassRooms(ctx, &learning.CreateClassRoomsRequest{
-		TeacherID:  in.TeacherID,
-		SubjectIDs: subjects,
-	})
-
-	if err != nil {
-		tx.Rollback()
-		s.Logger.Error(err.Error())
 		return nil, ErrInternal
 	}
 
@@ -171,8 +155,15 @@ INSERT INTO permissions (
 	}
 
 	/*
-		Commit
+		DELETE INVITATION
 	*/
+
+	_, err = tx.Exec(`DELETE FROM teachers_invitations where teacher_id = $1;`, in.TeacherID)
+	if err != nil {
+		tx.Rollback()
+		s.Logger.Error(err.Error())
+	}
+
 	err = tx.Commit()
 	if err != nil {
 		s.Logger.Error(err.Error())
@@ -180,12 +171,18 @@ INSERT INTO permissions (
 	}
 
 	/*
-		DELETE INVITATION
+		GENERATE CLASSROOMS FOR HER/HIS SUBJECTS ...
 	*/
 
-	_, err = s.DB.Exec(`DELETE FROM teachers_invitations where teacher_id = $1;`, in.TeacherID)
+	subjects := strings.Split(subjectsString, ",")
+	_, err = s.LearningService.CreateClassRooms(ctx, &learning.CreateClassRoomsRequest{
+		TeacherID:  in.TeacherID,
+		SubjectIDs: subjects,
+	})
+
 	if err != nil {
 		s.Logger.Error(err.Error())
+		return nil, ErrInternal
 	}
 
 	res, err := s.AuthService.Signup(ctx, &auth.SignUpRequest{
