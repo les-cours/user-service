@@ -10,6 +10,7 @@ import (
 	"runtime"
 
 	"github.com/les-cours/user-service/api/auth"
+	"github.com/les-cours/user-service/api/payment"
 	"github.com/les-cours/user-service/api/users"
 	"github.com/les-cours/user-service/resolvers"
 
@@ -104,10 +105,18 @@ func Start() {
 	defer learningConnectionService.Close()
 	learningServiceClient := learning.NewLearningServiceClient(learningConnectionService)
 
+	paymentConnectionService, err := grpc.Dial("payment-api:8080", grpc.WithInsecure())
+	if err != nil {
+		logger.Error(err.Error())
+	}
+	defer paymentConnectionService.Close()
+	paymentServiceClient := payment.NewPaymentServiceClient(paymentConnectionService)
+
 	var s = resolvers.GetInstance(
 		db,
 		authServiceClient,
 		learningServiceClient,
+		paymentServiceClient,
 		logger,
 	)
 

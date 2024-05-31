@@ -1,0 +1,18 @@
+syntax = "proto3";
+option go_package="github.com/les-cours/user-service/api/payment";
+package payment;
+
+message ChargeAccountRequest {
+  string studentID = 1;
+  string code = 2;
+}
+
+message AppResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+
+service PaymentService {
+  rpc chargeAccount (ChargeAccountRequest) returns (AppResponse) {}
+}
