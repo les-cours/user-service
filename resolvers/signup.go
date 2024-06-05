@@ -6,10 +6,8 @@ import (
 	"errors"
 	"github.com/google/uuid"
 	"github.com/les-cours/user-service/api/auth"
-	"github.com/les-cours/user-service/api/payment"
 	"github.com/les-cours/user-service/api/users"
 	"github.com/les-cours/user-service/utils"
-	"log"
 	"time"
 )
 
@@ -49,16 +47,6 @@ func (s *Server) DoesEmailExist(ctx context.Context, in *users.DoesEmailExistReq
 
 func (s *Server) StudentSignup(ctx context.Context, in *users.StudentSignupRequest) (*users.StudentSignupResponse, error) {
 
-	res2, err2 := s.PaymentService.ChargeAccount(ctx, &payment.ChargeAccountRequest{
-		StudentID: "a",
-		Code:      "a",
-	})
-	if err2 != nil {
-		s.Logger.Error(err2.Error())
-		return nil, err2
-	}
-	log.Println("res : ", res2)
-	return nil, nil
 	var accountID uuid.UUID
 	accountID, _ = uuid.NewRandom()
 
