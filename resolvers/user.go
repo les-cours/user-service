@@ -27,9 +27,15 @@ func (s *Server) GetUser(ctx context.Context, in *users.GetUserRequest) (*users.
 	}
 
 	var role = "student"
+
 	if in.IsTeacher {
 		role = "teacher"
 	}
+
+	if in.IsAdmin {
+		role = "admin"
+	}
+
 	user, err := s.GetUserByID(ctx, &users.GetUserByIDRequest{
 		AccountID: accountID,
 		UserRole:  role,
@@ -62,7 +68,7 @@ func (s *Server) GetUserByID(ctx context.Context, user *users.GetUserByIDRequest
 		teachers
 		INNER JOIN accounts ON accounts.account_id =teachers.teacher_id
 		WHERE
-	 	(accounts.account_id = $1)
+	 	(accounts.account_id = $1 AND accounts.user_type = 'teacher')
 		`, &user.AccountID).Scan(
 			&username,
 			&email,
@@ -72,6 +78,9 @@ func (s *Server) GetUserByID(ctx context.Context, user *users.GetUserByIDRequest
 			&accountStatus,
 			&userType)
 		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return nil, ErrNotFound("teacher")
+			}
 			s.Logger.Error(err.Error())
 			return nil, err
 		}
@@ -137,6 +146,99 @@ func (s *Server) GetUserByID(ctx context.Context, user *users.GetUserByIDRequest
 		}, nil
 	}
 
+	if user.UserRole == "admin" {
+
+		err = s.DB.QueryRow(
+			`
+		SELECT 
+		accounts.username, accounts.email,  accounts.status
+		FROM 
+		accounts
+		WHERE
+	 	(accounts.account_id = $1 AND accounts.user_type = 'admin')
+		`, user.AccountID).Scan(
+			&username,
+			&email,
+			&accountStatus)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return nil, ErrNotFound("teacher")
+			}
+			s.Logger.Error(err.Error())
+			return nil, err
+		}
+
+		var orgsCreate, orgsUpdate, orgsDelete, orgsRead bool
+		var usersCreate, usersUpdate, usersDelete, usersRead bool
+		var learningCreate, learningUpdate, learningDelete, learningRead bool
+		var paymentCreate, paymentUpdate, paymentDelete, paymentRead bool
+
+		err = s.DB.QueryRow(`SELECT  orgs_create, orgs_update, orgs_delete, orgs_read,
+               users_create, users_update, users_delete, users_read,
+               learning_create, learning_update, learning_delete, learning_read,
+               payment_create, payment_update, payment_delete, payment_read
+        FROM permissions
+	WHERE account_id = $1;
+	`, &user.AccountID).Scan(
+			&orgsCreate,
+			&orgsUpdate,
+			&orgsDelete,
+			&orgsRead,
+			&usersCreate,
+			&usersUpdate,
+			&usersDelete,
+			&usersRead,
+			&learningCreate,
+			&learningUpdate,
+			&learningDelete,
+			&learningRead,
+			&paymentCreate,
+			&paymentUpdate,
+			&paymentDelete,
+			&paymentRead,
+		)
+
+		if err != nil {
+			s.Logger.Error(err.Error())
+			return nil, ErrInternal
+		}
+
+		return &users.User{
+			Id:        user.AccountID,
+			AccountID: user.AccountID,
+			Username:  username,
+			FirstName: firstname,
+			LastName:  lastname,
+			Email:     email,
+			Avatar:    avatar,
+			UserType:  user.UserRole,
+			CREATE: &users.Permissions{
+				Orgs:     orgsCreate,
+				Learning: learningCreate,
+				Users:    usersCreate,
+				Payment:  paymentCreate,
+			},
+			READ: &users.Permissions{
+				Orgs:     orgsRead,
+				Learning: learningRead,
+				Users:    usersRead,
+				Payment:  paymentRead,
+			},
+			UPDATE: &users.Permissions{
+				Orgs:     orgsUpdate,
+				Learning: learningUpdate,
+				Users:    usersUpdate,
+				Payment:  paymentUpdate,
+			},
+			DELETE: &users.Permissions{
+				Orgs:     orgsDelete,
+				Learning: learningDelete,
+				Users:    usersDelete,
+				Payment:  paymentDelete,
+			},
+		}, nil
+	}
+
 	//student ...
 	err = s.DB.QueryRow(
 		`
@@ -147,7 +249,8 @@ func (s *Server) GetUserByID(ctx context.Context, user *users.GetUserByIDRequest
 		INNER JOIN accounts ON accounts.account_id = students.student_id
 		WHERE
 	 	(accounts.account_id = $1)
-		`, &user.AccountID).Scan(
+		`, user.AccountID).Scan(
+
 		&username,
 		&email,
 		&firstname,
