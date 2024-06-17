@@ -180,6 +180,9 @@ message Teacher {
     string description = 7;
     string avatar = 8;
     string email = 9;
+    string status = 10;
+    bool onlineStatus = 11;
+    string username = 12;
 }
 message  Teachers {
     repeated Teacher teachers =1;
@@ -279,6 +282,7 @@ service UserService {
     rpc TeacherSignup(TeacherSignupRequest) returns (TeacherSignupResponse) {}
     rpc UpdateTeacher(UpdateTeacherRequest) returns (Teacher) {}
     rpc GetTeacher(IDRequest) returns (Teacher) {}
+    rpc GetTeachers(Empty) returns (Teachers) {}
     /*
          USER
      */

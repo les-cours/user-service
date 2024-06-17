@@ -138,11 +138,11 @@ INSERT INTO permissions (
     false,       -- Example values for orgs_create
     false,      -- Example values for orgs_update
     false,      -- Example values for orgs_delete
-    false,       -- Example values for orgs_read
+    true,       -- Example values for orgs_read
     false,       -- Example values for users_create
     false,       -- Example values for users_update
     false,       -- Example values for users_delete
-    false,      -- Example values for users_read
+    true,      -- Example values for users_read
     true,       -- Example values for learning_create
     true,      -- Example values for learning_update
     true,      -- Example values for learning_delete
@@ -265,4 +265,63 @@ func (s *Server) DeleteTeacher(ctx context.Context, in *users.IDRequest) (*users
 	return &users.OperationStatus{
 		Completed: true,
 	}, nil
+}
+
+func (s *Server) GetTeachers(ctx context.Context, in *users.Empty) (*users.Teachers, error) {
+	//all,grad,subject,classroom
+	var rows *sql.Rows
+	var err error
+
+	teachers := &users.Teachers{}
+	teacher := &users.Teacher{}
+
+	rows, err = getTeachers(s.DB)
+	if err != nil {
+		s.Logger.Error(err.Error())
+		return nil, err
+	}
+
+	for rows.Next() {
+		err = rows.Scan(&teacher.TeacherID, &teacher.Firstname, &teacher.Lastname, &teacher.Username, &teacher.DateOfBirth, &teacher.Gender, &teacher.Status, &teacher.Avatar, &teacher.OnlineStatus, &teacher.CityID)
+		if err != nil {
+			s.Logger.Error(err.Error())
+			return nil, ErrInternal
+		}
+		teachers.Teachers = append(teachers.Teachers, teacher)
+	}
+	return teachers, nil
+
+}
+
+func (s *Server) GetTeacher(ctx context.Context, in *users.IDRequest) (*users.Teacher, error) {
+
+	teacher := &users.Teacher{}
+
+	err := s.DB.QueryRow(`
+select 
+    firstname,lastname,a.username,gender,a.status,avatar,online_status,city_id,date_of_birth
+    from  
+        teachers inner join accounts a on a.account_id = teachers.teacher_id where teacher_id = $1;`, in.Id).Scan(&teacher.Firstname, &teacher.Lastname, &teacher.Username, &teacher.Gender, &teacher.Status, &teacher.Avatar, &teacher.OnlineStatus, &teacher.CityID, &teacher.DateOfBirth)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNotFound("teacher")
+		}
+		s.Logger.Error(err.Error())
+		return nil, ErrInternal
+	}
+	teacher.TeacherID = in.Id
+	return teacher, nil
+}
+
+func getTeachers(db *sql.DB) (*sql.Rows, error) {
+	const Query = `select 
+   teacher_id,firstname,lastname,a.username,date_of_birth,gender,a.status,avatar,online_status,city_id
+    from  
+        teachers inner join public.accounts a on a.account_id = teachers.teacher_id`
+	rows, err := db.Query(Query)
+	if err != nil {
+		return nil, err
+	}
+	return rows, nil
 }

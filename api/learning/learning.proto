@@ -3,20 +3,264 @@ option go_package = "github.com/les-cours/learning-service/api/learning";
 package learning;
 
 
+message  OperationStatus{
+  bool success = 1;
+}
 message IDRequest {
   string id = 1;
+  string userID = 2;
 }
+message Pdf {
+  string pdfID = 1;
+  string title = 2;
+  string link = 3;
+}
+
+message Video {
+  string videoID = 1;
+  string title = 2;
+  string link = 3;
+}
+
+message CreateClassRoomRequest {
+  string teacherID = 1;
+  string subjectID = 2;
+}
+
 
 message CreateClassRoomsRequest {
   string teacherID = 1;
-  repeated string subjectIDs = 2;
+  repeated string subjectIDs= 2;
 }
 
-message OperationStatus {
-  bool completed = 1;
+
+message ClassRoom {
+  string classRoomID = 1;
+  string title = 2;
+  string image = 3;
+  int32 price = 4;
+  string badge = 5;
+  int32 studentCount = 6;
+  float Rating = 7;
+  string arabicTitle= 8;
+  string description = 9;
+  string arabicDescription = 10;
+  Teacher teacher = 11;
+  Chapters chapters = 12;
+}
+
+
+message UpdateClassRoomRequest {
+  string teacherID = 11;
+  string classRoomID = 1;
+  string title = 2;
+  string image = 3;
+  int32 price = 4;
+  string arabicTitle= 8;
+  string description = 9;
+  string arabicDescription = 10;
+}
+
+message Teacher {
+  string teacherID = 1;
+  string firstname = 2;
+  string lastname = 3;
+}
+
+message ClassRooms {
+  repeated ClassRoom classrooms = 1;
+}
+
+message AddDocumentToClassroomRequest {
+  string classRoomID = 1;
+}
+
+message Lesson {
+  string lessonID = 1;
+  string title = 2;
+  string  arabicTitle= 3;
+  string description = 4;
+  string arabicDescription = 5;
+  Documents documents = 6;
+  int32 lessonOrder = 7;
+}
+
+
+message Lessons{
+  repeated Lesson lessons = 1;
+}
+
+
+message CreateLessonRequest{
+  string userID = 6;
+  string title = 1;
+  string arabicTitle= 2;
+  string chapterID = 3;
+  string description = 4;
+}
+
+message UpdateLessonRequest {
+  string lessonID = 5;
+  string userID = 6;
+  string title = 1;
+  string arabicTitle= 2;
+  string chapterID = 3;
+  string description = 4;
+}
+
+message UploadVideoRequest {
+  bytes content = 1;
+  string filename = 2;
+}
+
+message Chapters {
+  repeated Chapter chapters =1 ;
+}
+
+
+message Chapter {
+  string chapterID = 1;
+  string title = 2;
+  string  arabicTitle= 3;
+  string description = 4;
+  string arabicDescription = 5;
+  Lessons lessons = 6;
+}
+
+message CreateChapterRequest {
+  string userID = 6;
+  string classRoomID = 1;
+  string title = 2;
+  string  arabicTitle= 3;
+  string description = 4;
+}
+
+message UpdateChapterRequest {
+  string chapterID = 7;
+  string userID = 6;
+  string title = 2;
+  string  arabicTitle= 3;
+  string description = 4;
+}
+
+message CreateDocumentRequest {
+  string lessonID = 1;
+  string title = 2;
+  string arabic_title = 3;
+  string description = 4;
+  int32 lecture_number = 5;
+}
+
+message CreateVideoRequest {
+  string lessonID = 2;
+  string title = 4;
+  string arabic_title = 5;
+  string description = 6;
+  int32 lecture_number = 8;
+  UploadVideoRequest video = 9;
+}
+
+message  CreatePdfRequest {
+  string userID = 1;
+  string lessonID = 2;
+  string title = 4;
+  string arabic_title = 5;
+  string description = 6;
+  string arabicDescription = 7;
+  int32  lecture_number = 8;
+  string url = 9;
+}
+
+
+message Document {
+  string documentID = 1;
+  string documentType = 3;
+  string title = 4;
+  string arabic_title = 5;
+  string description = 6;
+  string arabicDescription = 10;
+  Duration duration = 7;
+  int32 lecture_number = 8;
+  string DocumentLink=9;
+}
+
+message DocumentLink {
+  string DocumentLink = 1;
+}
+
+message Duration {
+  int32 hours = 1;
+  int32 minutes = 2;
+  int32 seconds = 3;
+  int32 nanoseconds = 4;
+}
+message Documents{
+  repeated Document documents = 1;
+}
+
+message Comment {
+  string id = 1;                 // Unique identifier for the comment
+  string userID = 2;            // ID of the user who made the comment
+  string repliedTo = 7;
+  string content = 3;           // The actual comment text
+  string documentID = 4;            // ID of the post to which the comment belongs
+  int64 timestamp = 5;          // Timestamp of when the comment was made
+  bool edited = 6;              // Whether the comment has been edited
+  bool isTeacher = 8;
+}
+
+message CreateCommentRequest {
+  string userID = 1;            // ID of the user creating the comment
+  string content = 2;           // The actual comment text
+  string documentID = 3;            // ID of the post to which the comment is being added
+  string repliedTo = 4;
+  bool isTeacher = 5;
+}
+
+message Comments {
+  repeated Comment comments = 1;
 }
 
 service LearningService {
   rpc CreateClassRooms(CreateClassRoomsRequest)returns (OperationStatus){}
+  rpc CreateClassRoom(CreateClassRoomRequest)returns (ClassRoom){}
+  rpc UpdateClassRoom(UpdateClassRoomRequest)returns (ClassRoom){}
+  rpc GetClassRooms(IDRequest)returns (ClassRooms){}
+  rpc GetClassRoomsByTeacher(IDRequest)returns(ClassRooms){}
+  rpc GetMyClassRooms(IDRequest)returns (ClassRooms){} // student -> classrooms
+  rpc GetClassRoom(IDRequest)returns (ClassRoom){}
+  rpc DeleteClassRoom(IDRequest)returns(OperationStatus){}
   rpc DeleteClassRoomsByTeacher(IDRequest)returns (OperationStatus){}
+
+
+  /*
+  CHAPTER
+*/
+  rpc CreateChapter(CreateChapterRequest)returns (Chapter){}
+  rpc GetChaptersByClassRoom(IDRequest)returns (Chapters){}
+  rpc UpdateChapter(UpdateChapterRequest)returns (Chapter){}
+  rpc DeleteChapter(IDRequest)returns (OperationStatus){}
+
+  /*
+    LESSONS
+  */
+  rpc GetLessonsByChapter(IDRequest)returns(Lessons){}
+  rpc CreateLesson(CreateLessonRequest)returns (Lesson){}
+  rpc UpdateLesson(UpdateLessonRequest)returns (Lesson){}
+  rpc DeleteLesson(IDRequest)returns (OperationStatus){}
+  /*
+   DOCUMENT
+*/
+
+  rpc GetDocuments(IDRequest)returns (Documents){}
+  rpc GetDocument(IDRequest)returns (DocumentLink){}
+  rpc DeleteDocument(IDRequest)returns (OperationStatus){}
+
+  rpc CreateVideo(CreateVideoRequest)returns (Document){}
+
+  rpc CreatePdf(CreatePdfRequest)returns (Document){}
+  rpc CreateComment(CreateCommentRequest)returns (OperationStatus){}
+  rpc GetComments(IDRequest)returns (Comments){}
+  rpc GetRepliedComments(IDRequest)returns (Comments){}
+
 }

@@ -35,6 +35,7 @@ type UserServiceClient interface {
 	TeacherSignup(ctx context.Context, in *TeacherSignupRequest, opts ...grpc.CallOption) (*TeacherSignupResponse, error)
 	UpdateTeacher(ctx context.Context, in *UpdateTeacherRequest, opts ...grpc.CallOption) (*Teacher, error)
 	GetTeacher(ctx context.Context, in *IDRequest, opts ...grpc.CallOption) (*Teacher, error)
+	GetTeachers(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Teachers, error)
 	GetUser(ctx context.Context, in *GetUserRequest, opts ...grpc.CallOption) (*User, error)
 	GetUserByID(ctx context.Context, in *GetUserByIDRequest, opts ...grpc.CallOption) (*User, error)
 	ResetPassword(ctx context.Context, in *ResetPasswordRequest, opts ...grpc.CallOption) (*ResetPasswordResponse, error)
@@ -171,6 +172,15 @@ func (c *userServiceClient) GetTeacher(ctx context.Context, in *IDRequest, opts 
 	return out, nil
 }
 
+func (c *userServiceClient) GetTeachers(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Teachers, error) {
+	out := new(Teachers)
+	err := c.cc.Invoke(ctx, "/users.UserService/GetTeachers", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *userServiceClient) GetUser(ctx context.Context, in *GetUserRequest, opts ...grpc.CallOption) (*User, error) {
 	out := new(User)
 	err := c.cc.Invoke(ctx, "/users.UserService/GetUser", in, out, opts...)
@@ -269,6 +279,7 @@ type UserServiceServer interface {
 	TeacherSignup(context.Context, *TeacherSignupRequest) (*TeacherSignupResponse, error)
 	UpdateTeacher(context.Context, *UpdateTeacherRequest) (*Teacher, error)
 	GetTeacher(context.Context, *IDRequest) (*Teacher, error)
+	GetTeachers(context.Context, *Empty) (*Teachers, error)
 	GetUser(context.Context, *GetUserRequest) (*User, error)
 	GetUserByID(context.Context, *GetUserByIDRequest) (*User, error)
 	ResetPassword(context.Context, *ResetPasswordRequest) (*ResetPasswordResponse, error)
@@ -323,6 +334,9 @@ func (UnimplementedUserServiceServer) UpdateTeacher(context.Context, *UpdateTeac
 }
 func (UnimplementedUserServiceServer) GetTeacher(context.Context, *IDRequest) (*Teacher, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTeacher not implemented")
+}
+func (UnimplementedUserServiceServer) GetTeachers(context.Context, *Empty) (*Teachers, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTeachers not implemented")
 }
 func (UnimplementedUserServiceServer) GetUser(context.Context, *GetUserRequest) (*User, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUser not implemented")
@@ -598,6 +612,24 @@ func _UserService_GetTeacher_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_GetTeachers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).GetTeachers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/users.UserService/GetTeachers",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).GetTeachers(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _UserService_GetUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetUserRequest)
 	if err := dec(in); err != nil {
@@ -818,6 +850,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetTeacher",
 			Handler:    _UserService_GetTeacher_Handler,
+		},
+		{
+			MethodName: "GetTeachers",
+			Handler:    _UserService_GetTeachers_Handler,
 		},
 		{
 			MethodName: "GetUser",
