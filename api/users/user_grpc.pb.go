@@ -45,6 +45,7 @@ type UserServiceClient interface {
 	DoesUserNameExist(ctx context.Context, in *DoesUserNameExistRequest, opts ...grpc.CallOption) (*DoesUserNameExistResponse, error)
 	IsSignupLinkValid(ctx context.Context, in *IsSignupLinkValidRequest, opts ...grpc.CallOption) (*IsSignupLinkValidResponse, error)
 	UserPasswordReset(ctx context.Context, in *UserPasswordResetRequest, opts ...grpc.CallOption) (*OperationStatus, error)
+	InitStudent(ctx context.Context, in *IDRequest, opts ...grpc.CallOption) (*Notifications, error)
 }
 
 type userServiceClient struct {
@@ -262,6 +263,15 @@ func (c *userServiceClient) UserPasswordReset(ctx context.Context, in *UserPassw
 	return out, nil
 }
 
+func (c *userServiceClient) InitStudent(ctx context.Context, in *IDRequest, opts ...grpc.CallOption) (*Notifications, error) {
+	out := new(Notifications)
+	err := c.cc.Invoke(ctx, "/users.UserService/InitStudent", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility
@@ -289,6 +299,7 @@ type UserServiceServer interface {
 	DoesUserNameExist(context.Context, *DoesUserNameExistRequest) (*DoesUserNameExistResponse, error)
 	IsSignupLinkValid(context.Context, *IsSignupLinkValidRequest) (*IsSignupLinkValidResponse, error)
 	UserPasswordReset(context.Context, *UserPasswordResetRequest) (*OperationStatus, error)
+	InitStudent(context.Context, *IDRequest) (*Notifications, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -364,6 +375,9 @@ func (UnimplementedUserServiceServer) IsSignupLinkValid(context.Context, *IsSign
 }
 func (UnimplementedUserServiceServer) UserPasswordReset(context.Context, *UserPasswordResetRequest) (*OperationStatus, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UserPasswordReset not implemented")
+}
+func (UnimplementedUserServiceServer) InitStudent(context.Context, *IDRequest) (*Notifications, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method InitStudent not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 
@@ -792,6 +806,24 @@ func _UserService_UserPasswordReset_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_InitStudent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(IDRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).InitStudent(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/users.UserService/InitStudent",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).InitStudent(ctx, req.(*IDRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -890,6 +922,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UserPasswordReset",
 			Handler:    _UserService_UserPasswordReset_Handler,
+		},
+		{
+			MethodName: "InitStudent",
+			Handler:    _UserService_InitStudent_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

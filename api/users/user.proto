@@ -241,14 +241,13 @@ message ProfileNotification {
     string id = 1;
     string content = 3;
 }
+message Notifications{
+    repeated  Notification notifications = 1;
+}
 message Notification  {
   string id = 1 ;      
 	string title = 2;
-	int64 timestamp = 3;       
 	string content = 4;
-	string category = 6;   
-  string type = 7;
-
 }
 message GetNotificationsRequest {
     string AccountID = 1;
@@ -296,5 +295,8 @@ service UserService {
     rpc DoesUserNameExist(DoesUserNameExistRequest) returns (DoesUserNameExistResponse) {}
     rpc IsSignupLinkValid(IsSignupLinkValidRequest) returns (IsSignupLinkValidResponse) {}
     rpc UserPasswordReset(UserPasswordResetRequest)returns (OperationStatus){}
+
+
+    rpc InitStudent(IDRequest) returns(Notifications){}
 
 }

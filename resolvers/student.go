@@ -3,9 +3,33 @@ package resolvers
 import (
 	"database/sql"
 	"errors"
+	"github.com/les-cours/user-service/api/learning"
 	"github.com/les-cours/user-service/api/users"
 	"golang.org/x/net/context"
 )
+
+func (s *Server) InitStudent(ctx context.Context, in *users.IDRequest) (*users.Notifications, error) {
+	res, err := s.LearningService.InitClassRooms(ctx, &learning.IDRequest{
+		Id:     in.Id,
+		UserID: in.Id,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var notifications = make([]*users.Notification, 0)
+	for _, notification := range res.Notifications {
+		notifications = append(notifications, &users.Notification{
+			Id:      notification.Id,
+			Title:   notification.Title,
+			Content: notification.Content,
+		})
+	}
+
+	return &users.Notifications{
+		Notifications: notifications,
+	}, nil
+}
 
 func (s *Server) GetStudents(ctx context.Context, in *users.GetStudentsRequest) (*users.Students, error) {
 	//all,grad,subject,classroom
@@ -49,7 +73,7 @@ func (s *Server) GetStudent(ctx context.Context, in *users.GetStudentRequest) (*
 
 	err := s.DB.QueryRow(`
 select 
-    firstname,lastname,a.username,gender,a.status,avatar,notification_status,online_status,,city_id,date_of_birth
+    firstname,lastname,a.username,gender,a.status,avatar,notification_status,online_status,city_id,date_of_birth
     from  
         students inner join accounts a on a.account_id = students.student_id where student_id = $1;`, in.StudentID).Scan(&student.Firstname, &student.Lastname, &student.Username, &student.Gender, &student.Status, &student.Avatar, &student.NotificationStatus, &student.OnlineStatus, &student.CityID, &student.DateOfBirth)
 
