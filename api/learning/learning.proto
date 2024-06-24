@@ -29,7 +29,7 @@ service LearningService {
   rpc CreateClassRooms(CreateClassRoomsRequest)returns (OperationStatus){}
   rpc DeleteClassRoomsByTeacher(IDRequest)returns (OperationStatus){}
 
-  rpc InitStudent(IDRequest)returns(Notifications){}
+  rpc InitClassRooms(IDRequest)returns(Notifications){}
 
 
 }
