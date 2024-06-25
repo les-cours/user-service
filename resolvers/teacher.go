@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 	"database/sql"
+	"encoding/base64"
 	"errors"
 	"github.com/les-cours/user-service/api/auth"
 	"github.com/les-cours/user-service/api/learning"
@@ -19,6 +20,11 @@ func (s *Server) InviteTeacher(ctx context.Context, in *users.InviteTeacherReque
 	if notExist {
 		return nil, Err("already invited")
 	}
+	s.DB.QueryRow(`SELECT true FROM accounts WHERE email = $1 `, in.Email).Scan(&notExist)
+	if notExist {
+		return nil, Err("already teacher")
+	}
+
 	teacherID := utils.GenerateUUIDString()
 	var subjectsString = in.Subjects[0]
 	for i := 1; i < len(in.Subjects); i++ {
@@ -41,7 +47,7 @@ VALUES ($1,$2,$3)`, teacherID, in.Email, subjectsString)
 		return nil, ErrInternal
 	}
 
-	link := env.Settings.TeacherConfirmEndPoint + teacherID
+	link := env.Settings.TeacherConfirmEndPoint + base64.URLEncoding.EncodeToString([]byte(teacherID))
 	//Send Email :
 	var emailData = struct {
 		Receiver string
@@ -76,7 +82,14 @@ func (s *Server) TeacherSignup(ctx context.Context, in *users.TeacherSignupReque
 	var subjectsString string
 	var email string
 
-	err := s.DB.QueryRow(`SELECT email,subjects FROM teachers_invitations WHERE teacher_id = $1;`, in.TeacherID).Scan(&email, &subjectsString)
+	decodedID, err := base64.URLEncoding.DecodeString(in.TeacherID)
+	if err != nil {
+		return nil, ErrNotFound("invitation")
+	}
+
+	teacherID := string(decodedID)
+
+	err = s.DB.QueryRow(`SELECT email,subjects FROM teachers_invitations WHERE teacher_id = $1;`, teacherID).Scan(&email, &subjectsString)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, Err("you are not invited.")
@@ -92,11 +105,11 @@ func (s *Server) TeacherSignup(ctx context.Context, in *users.TeacherSignupReque
 		return nil, ErrInternal
 	}
 
-	var userName = "T_" + in.Firstname + "_" + in.Lastname
+	var userName = "t_" + in.Firstname + "_" + in.Lastname
 	_, err = tx.ExecContext(context.Background(),
 		`INSERT INTO accounts 
 		(account_id,email,password,username, status, user_type) VALUES($1, $2,crypt($3,gen_salt('bf')),$4,$5,$6);`,
-		in.TeacherID, email, in.GetPassword(), userName, "active", "teacher")
+		teacherID, email, in.GetPassword(), userName, "active", "teacher")
 
 	if err != nil {
 		s.Logger.Error(err.Error())
@@ -113,7 +126,7 @@ func (s *Server) TeacherSignup(ctx context.Context, in *users.TeacherSignupReque
 	_, err = tx.Exec(`INSERT INTO 
     teachers 
     (teacher_id, firstname, lastname,avatar) 
-VALUES ($1,$2,$3,$4)`, in.TeacherID, in.Firstname, in.Lastname, avatar)
+VALUES ($1,$2,$3,$4)`, teacherID, in.Firstname, in.Lastname, avatar)
 	if err != nil {
 		s.Logger.Error(err.Error())
 		tx.Rollback()
@@ -152,7 +165,7 @@ INSERT INTO permissions (
     true,      -- Example values for learning_update
     true,      -- Example values for learning_delete
     true        -- Example values for learning_read
-);`, in.TeacherID)
+);`, teacherID)
 	if err != nil {
 		s.Logger.Error(err.Error())
 		tx.Rollback()
@@ -163,7 +176,7 @@ INSERT INTO permissions (
 		DELETE INVITATION
 	*/
 
-	_, err = tx.Exec(`DELETE FROM teachers_invitations where teacher_id = $1;`, in.TeacherID)
+	_, err = tx.Exec(`DELETE FROM teachers_invitations where teacher_id = $1;`, teacherID)
 	if err != nil {
 		tx.Rollback()
 		s.Logger.Error(err.Error())
@@ -181,7 +194,7 @@ INSERT INTO permissions (
 
 	subjects := strings.Split(subjectsString, ",")
 	_, err = s.LearningService.CreateClassRooms(ctx, &learning.CreateClassRoomsRequest{
-		TeacherID:  in.TeacherID,
+		TeacherID:  teacherID,
 		SubjectIDs: subjects,
 	})
 
@@ -191,7 +204,7 @@ INSERT INTO permissions (
 	}
 
 	res, err := s.AuthService.Signup(ctx, &auth.SignUpRequest{
-		AccountID: in.TeacherID,
+		AccountID: teacherID,
 		UserRole:  "teacher",
 	})
 
