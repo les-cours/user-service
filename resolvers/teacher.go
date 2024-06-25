@@ -14,6 +14,11 @@ import (
 )
 
 func (s *Server) InviteTeacher(ctx context.Context, in *users.InviteTeacherRequest) (*users.OperationStatus, error) {
+	var notExist bool
+	s.DB.QueryRow(`SELECT true FROM teachers_invitations WHERE email = $1 `, in.Email).Scan(&notExist)
+	if notExist {
+		return nil, Err("already invited")
+	}
 	teacherID := utils.GenerateUUIDString()
 	var subjectsString = in.Subjects[0]
 	for i := 1; i < len(in.Subjects); i++ {
