@@ -291,7 +291,6 @@ func (s *Server) GetTeachers(ctx context.Context, in *users.Empty) (*users.Teach
 	var err error
 
 	teachers := &users.Teachers{}
-	teacher := &users.Teacher{}
 
 	rows, err = getTeachers(s.DB)
 	if err != nil {
@@ -300,6 +299,7 @@ func (s *Server) GetTeachers(ctx context.Context, in *users.Empty) (*users.Teach
 	}
 
 	for rows.Next() {
+		var teacher = new(users.Teacher)
 		err = rows.Scan(&teacher.TeacherID, &teacher.Firstname, &teacher.Lastname, &teacher.Username, &teacher.DateOfBirth, &teacher.Gender, &teacher.Status, &teacher.Avatar, &teacher.OnlineStatus, &teacher.CityID)
 		if err != nil {
 			s.Logger.Error(err.Error())
